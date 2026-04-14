@@ -4,7 +4,7 @@ import { format } from 'date-fns'
 import { formatCents } from './stripe'
 import type { BookingWithDetails } from '@/types'
 
-const resend = new Resend(process.env.RESEND_API_KEY)
+const resend = new Resend(process.env.RESEND_API_KEY ?? 're_placeholder')
 const FROM = process.env.EMAIL_FROM ?? 'hello@bespokebikeboston.com'
 
 // ─── Booking Confirmation ──────────────────────────────────────────────────────
