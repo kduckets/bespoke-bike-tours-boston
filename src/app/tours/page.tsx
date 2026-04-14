@@ -15,7 +15,7 @@ const TOURS = [
     badge: '★ Most Popular',
     label: 'BESTSELLER',
     title: 'THE MAIN EVENT',
-    desc: 'The classic Boston experience on two wheels. Hit every iconic landmark while your guide keeps the energy high and the stories flowing.',
+    desc: 'A fully customized tour of the Boston area — we tailor the route, the stops, and the pace to your group. No two rides are exactly alike.',
     details: [
       ['Duration', '2.5 Hours'],
       ['Group Size', 'Up to 12 riders'],

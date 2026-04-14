@@ -8,7 +8,7 @@ const SERVICES = [
   {
     badge: '★ Most Popular',
     title: 'THE MAIN EVENT',
-    desc: '2.5-hour guided group ride hitting Boston\'s greatest hits — the Esplanade, Back Bay, Beacon Hill & beyond.',
+    desc: 'A fully customized 2.5-hour guided tour of the Boston area — we tailor the route, the pace, and the vibe to your group.',
     price: '$75',
     unit: '/ person',
     featured: true,
