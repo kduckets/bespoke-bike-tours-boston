@@ -1,0 +1,138 @@
+// prisma/schema.prisma
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Tours ────────────────────────────────────────────────────────────────────
+
+model Tour {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  name        String
+  description String
+  duration    String   // e.g. "2.5 hours"
+  maxCapacity Int
+  pricePerPerson Int   // in cents
+  groupBasePrice Int?  // in cents, for private tours
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  slots       TimeSlot[]
+}
+
+// ─── Availability ─────────────────────────────────────────────────────────────
+
+model TimeSlot {
+  id          String   @id @default(cuid())
+  tourId      String
+  tour        Tour     @relation(fields: [tourId], references: [id])
+  date        DateTime // date only, stored as midnight UTC
+  startTime   String   // e.g. "10:00"
+  capacity    Int
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  bookings    Booking[]
+
+  @@unique([tourId, date, startTime])
+  @@index([date])
+}
+
+// ─── Bookings ─────────────────────────────────────────────────────────────────
+
+model Booking {
+  id              String        @id @default(cuid())
+  reference       String        @unique // e.g. BBT-2025-4921
+  slotId          String
+  slot            TimeSlot      @relation(fields: [slotId], references: [id])
+  guestCount      Int
+  firstName       String
+  lastName        String
+  email           String
+  phone           String
+  specialRequests String?
+  promoCodeId     String?
+  promoCode       PromoCode?    @relation(fields: [promoCodeId], references: [id])
+  subtotalCents   Int
+  discountCents   Int           @default(0)
+  totalCents      Int
+  status          BookingStatus @default(PENDING)
+  stripePaymentIntentId String? @unique
+  stripeChargeId  String?
+  notes           String?       // internal admin notes
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  refunds         Refund[]
+
+  @@index([email])
+  @@index([status])
+  @@index([createdAt])
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  REFUNDED
+  PARTIALLY_REFUNDED
+  NO_SHOW
+}
+
+// ─── Refunds ──────────────────────────────────────────────────────────────────
+
+model Refund {
+  id              String     @id @default(cuid())
+  bookingId       String
+  booking         Booking    @relation(fields: [bookingId], references: [id])
+  amountCents     Int
+  reason          String
+  stripeRefundId  String?    @unique
+  type            RefundType
+  issuedAt        DateTime   @default(now())
+  issuedBy        String     // admin user id or email
+}
+
+enum RefundType {
+  FULL
+  PARTIAL
+  CREDIT
+}
+
+// ─── Promo Codes ──────────────────────────────────────────────────────────────
+
+model PromoCode {
+  id           String         @id @default(cuid())
+  code         String         @unique
+  type         PromoType
+  value        Int            // percentage (0-100) or cents
+  maxUses      Int?           // null = unlimited
+  usedCount    Int            @default(0)
+  expiresAt    DateTime?
+  isActive     Boolean        @default(true)
+  createdAt    DateTime       @default(now())
+
+  bookings     Booking[]
+}
+
+enum PromoType {
+  PERCENTAGE
+  FIXED_AMOUNT
+}
+
+// ─── Admin Users ──────────────────────────────────────────────────────────────
+
+model AdminUser {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String   // bcrypt hashed
+  name      String
+  createdAt DateTime @default(now())
+}
