@@ -58,10 +58,10 @@ export default function HomePage() {
 
         <HeroParticles />
 
-        <div className="relative z-10 text-center max-w-3xl px-6">
+        <div className="relative z-10 text-center max-w-3xl px-6 pt-[70px]">
           <div className="inline-block border border-gold/40 bg-gold/10 text-gold
                           text-[11px] tracking-[3px] uppercase px-5 py-2 rounded-sm mb-6">
-            ✦ Est. 2024 · Boston, MA ✦
+            ✦ Est. 2025 · Boston, MA ✦
           </div>
 
           <h1 className="font-display leading-[0.9] tracking-wide mb-3">
