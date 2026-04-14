@@ -6,10 +6,11 @@ import { formatTime, formatPrice } from '@/lib/utils'
 
 export async function GET(
   _req: NextRequest,
-  { params }: { params: { reference: string } }
+  { params }: { params: Promise<{ reference: string }> }
 ) {
+  const { reference } = await params
   const booking = await prisma.booking.findUnique({
-    where: { reference: params.reference },
+    where: { reference },
     include: { slot: { include: { tour: true } }, promoCode: true },
   })
 
