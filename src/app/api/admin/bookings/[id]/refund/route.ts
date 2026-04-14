@@ -14,15 +14,16 @@ const RefundSchema = z.object({
   reason: z.string().min(1),
 })
 
-export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await getServerSession(authOptions)
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
+  const { id } = await params
   const body = await req.json()
   const { type, amountCents, reason } = RefundSchema.parse(body)
 
   const booking = await prisma.booking.findUnique({
-    where: { id: params.id },
+    where: { id },
     include: { slot: { include: { tour: true } }, promoCode: true },
   })
 
@@ -40,7 +41,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   await prisma.$transaction([
     prisma.refund.create({
       data: {
-        bookingId: booking.id,
+        bookingId: id,
         amountCents: refundAmount ?? booking.totalCents,
         reason,
         stripeRefundId,

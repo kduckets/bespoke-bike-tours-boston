@@ -6,9 +6,6 @@ import { prisma } from '@/lib/prisma'
 import { sendBookingConfirmation } from '@/lib/email'
 import type Stripe from 'stripe'
 
-// Stripe requires the raw body for signature verification
-export const config = { api: { bodyParser: false } }
-
 export async function POST(req: NextRequest) {
   const rawBody = await req.text()
   const sig = req.headers.get('stripe-signature')

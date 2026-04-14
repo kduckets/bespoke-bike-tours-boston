@@ -27,8 +27,9 @@ const STATUS_BADGE: Record<BookingStatus, string> = {
   NO_SHOW:            'badge badge-cancelled',
 }
 
-export default async function BookingDetailPage({ params }: { params: { id: string } }) {
-  const booking = await getBooking(params.id)
+export default async function BookingDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
+  const booking = await getBooking(id)
   if (!booking) notFound()
 
   const canRefund =

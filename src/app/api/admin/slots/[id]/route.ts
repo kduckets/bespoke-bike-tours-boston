@@ -10,15 +10,16 @@ const PatchSchema = z.object({
   isActive: z.boolean().optional(),
 })
 
-export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await getServerSession(authOptions)
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
+  const { id } = await params
   const body = await req.json()
   const data = PatchSchema.parse(body)
 
   const slot = await prisma.timeSlot.update({
-    where: { id: params.id },
+    where: { id },
     data,
     include: { tour: true, _count: { select: { bookings: true } } },
   })
@@ -26,14 +27,15 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   return NextResponse.json(slot)
 }
 
-export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await getServerSession(authOptions)
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  // Check for existing confirmed bookings before deleting
+  const { id } = await params
+
   const bookingCount = await prisma.booking.count({
     where: {
-      slotId: params.id,
+      slotId: id,
       status: { notIn: ['CANCELLED', 'REFUNDED'] },
     },
   })
@@ -45,6 +47,6 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
     )
   }
 
-  await prisma.timeSlot.delete({ where: { id: params.id } })
+  await prisma.timeSlot.delete({ where: { id } })
   return NextResponse.json({ success: true })
 }
