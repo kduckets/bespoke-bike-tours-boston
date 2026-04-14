@@ -11,7 +11,7 @@ async function getStats() {
   const now = new Date()
   const monthStart = startOfMonth(now)
   const monthEnd = endOfMonth(now)
-  const activeStatuses = { notIn: [BookingStatus.CANCELLED, BookingStatus.REFUNDED] } as const
+  const activeStatuses = { notIn: [BookingStatus.CANCELLED, BookingStatus.REFUNDED] }
 
   const [revenueAgg, ridersAgg, bookingsThisMonth, recentBookings, upcomingSlots] =
     await Promise.all([
