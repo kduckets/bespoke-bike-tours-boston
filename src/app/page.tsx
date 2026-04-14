@@ -65,12 +65,12 @@ export default function HomePage() {
           </div>
 
           <h1 className="font-display leading-[0.9] tracking-wide mb-3">
-            <span className="block text-[96px] text-white">RIDE</span>
-            <span className="block text-[96px] shimmer-gold">BOSTON</span>
-            <span className="block text-[96px] text-white">IN STYLE</span>
+            <span className="block text-[56px] sm:text-[76px] md:text-[96px] text-white">RIDE</span>
+            <span className="block text-[56px] sm:text-[76px] md:text-[96px] shimmer-gold">BOSTON</span>
+            <span className="block text-[56px] sm:text-[76px] md:text-[96px] text-white">IN STYLE</span>
           </h1>
 
-          <p className="font-serif italic text-xl text-iris-2 mb-10">
+          <p className="font-serif italic text-lg sm:text-xl text-iris-2 mb-10">
             Guided rides. Iconic sights. Unforgettable night out.
           </p>
 
