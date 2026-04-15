@@ -5,7 +5,7 @@ import { buildMetadata } from '@/lib/metadata'
 import { ContactForm } from '@/components/ui/ContactForm'
 import { getSiteContent } from '@/lib/site-content'
 
-export const dynamic = 'force-dynamic'
+export const revalidate = 60
 
 export const metadata: Metadata = buildMetadata({
   title: 'Contact Us',

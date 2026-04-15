@@ -6,7 +6,7 @@ import { InlineBookingWidgetClient as InlineBookingWidget } from '@/components/b
 import { getSiteContent } from '@/lib/site-content'
 import { prisma } from '@/lib/prisma'
 
-export const dynamic = 'force-dynamic'
+export const revalidate = 60
 
 const SERVICES = [
   {

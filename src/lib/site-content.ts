@@ -16,12 +16,20 @@ export const SITE_CONTENT_DEFAULTS: Record<string, string> = {
 }
 
 export async function getSiteContent(keys: string[]): Promise<Record<string, string>> {
-  const rows = await prisma.siteContent.findMany({ where: { key: { in: keys } } })
-  const stored = Object.fromEntries(rows.map(r => [r.key, r.value]))
-  // Fall back to defaults for any missing keys
-  const result: Record<string, string> = {}
-  for (const key of keys) {
-    result[key] = stored[key] ?? SITE_CONTENT_DEFAULTS[key] ?? ''
+  try {
+    const rows = await prisma.siteContent.findMany({ where: { key: { in: keys } } })
+    const stored = Object.fromEntries(rows.map(r => [r.key, r.value]))
+    const result: Record<string, string> = {}
+    for (const key of keys) {
+      result[key] = stored[key] ?? SITE_CONTENT_DEFAULTS[key] ?? ''
+    }
+    return result
+  } catch {
+    // Return defaults if DB is unreachable
+    const result: Record<string, string> = {}
+    for (const key of keys) {
+      result[key] = SITE_CONTENT_DEFAULTS[key] ?? ''
+    }
+    return result
   }
-  return result
 }
