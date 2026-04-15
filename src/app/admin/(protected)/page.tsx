@@ -1,6 +1,7 @@
 // src/app/admin/page.tsx
 import { Suspense } from 'react'
 import { unstable_cache } from 'next/cache'
+import { BikeWheelSpinner } from '@/components/ui/BikeWheelSpinner'
 import { prisma } from '@/lib/prisma'
 import { startOfMonth, endOfMonth, addDays, startOfDay, format } from 'date-fns'
 import { BookingStatus } from '@prisma/client'
@@ -177,9 +178,8 @@ function StatCardsSkeleton() {
   return (
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
       {[1, 2, 3, 4].map((n) => (
-        <div key={n} className="card p-6">
-          <div className="h-3 w-24 bg-white/5 rounded mb-3 animate-pulse" />
-          <div className="h-10 w-20 bg-white/5 rounded animate-pulse" />
+        <div key={n} className="card p-6 flex items-center justify-center h-[88px]">
+          <BikeWheelSpinner size={32} className="text-gold/40" />
         </div>
       ))}
     </div>
@@ -187,7 +187,11 @@ function StatCardsSkeleton() {
 }
 
 function GridSkeleton() {
-  return <div className="card p-6 h-80 animate-pulse" />
+  return (
+    <div className="card p-6 h-80 flex items-center justify-center">
+      <BikeWheelSpinner size={48} className="text-gold/40" />
+    </div>
+  )
 }
 
 // ── Page ──────────────────────────────────────────────────────────────────────
