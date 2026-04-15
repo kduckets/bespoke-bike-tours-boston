@@ -1,4 +1,7 @@
 // prisma/seed.ts
+import { config } from 'dotenv'
+config({ path: '.env.local' })
+config()
 import { PrismaClient, PromoType } from '@prisma/client'
 import bcrypt from 'bcryptjs'
 import { addDays, startOfDay } from 'date-fns'
@@ -113,7 +116,7 @@ async function main() {
   const hashedPassword = await bcrypt.hash(process.env.ADMIN_SEED_PASSWORD || 'changeme123', 12)
   await prisma.adminUser.upsert({
     where: { email: 'admin@bespokebikeboston.com' },
-    update: {},
+    update: { password: hashedPassword },
     create: {
       email: 'admin@bespokebikeboston.com',
       password: hashedPassword,
