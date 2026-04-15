@@ -136,3 +136,26 @@ model AdminUser {
   name      String
   createdAt DateTime @default(now())
 }
+
+// ─── CMS: Site Content ────────────────────────────────────────────────────────
+
+model SiteContent {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     String   @db.Text
+  updatedAt DateTime @updatedAt
+}
+
+// ─── CMS: Testimonials ────────────────────────────────────────────────────────
+
+model Testimonial {
+  id        String   @id @default(cuid())
+  quote     String   @db.Text
+  author    String
+  location  String
+  rating    Int      @default(5)
+  isActive  Boolean  @default(true)
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

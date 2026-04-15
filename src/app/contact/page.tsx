@@ -3,6 +3,9 @@ import type { Metadata } from 'next'
 import { Footer } from '@/components/layout/Footer'
 import { buildMetadata } from '@/lib/metadata'
 import { ContactForm } from '@/components/ui/ContactForm'
+import { getSiteContent } from '@/lib/site-content'
+
+export const dynamic = 'force-dynamic'
 
 export const metadata: Metadata = buildMetadata({
   title: 'Contact Us',
@@ -37,7 +40,24 @@ const FAQ = [
   },
 ]
 
-export default function ContactPage() {
+export default async function ContactPage() {
+  const contact = await getSiteContent([
+    'contact_email',
+    'contact_phone',
+    'contact_location',
+    'contact_hours',
+    'contact_instagram_handle',
+    'contact_instagram_url',
+  ])
+
+  const contactRows = [
+    { label: 'Email',     value: contact.contact_email,            href: `mailto:${contact.contact_email}` },
+    { label: 'Phone',     value: contact.contact_phone,            href: `tel:${contact.contact_phone.replace(/\D/g, '')}` },
+    { label: 'Meet Up',   value: contact.contact_location,         href: `https://maps.google.com/?q=${encodeURIComponent(contact.contact_location + ' Boston')}` },
+    { label: 'Hours',     value: contact.contact_hours,            href: null },
+    { label: 'Instagram', value: contact.contact_instagram_handle, href: contact.contact_instagram_url },
+  ]
+
   return (
     <>
       <div className="pt-[70px]">
@@ -63,13 +83,7 @@ export default function ContactPage() {
           <div>
             <div className="section-label mb-4">Find Us</div>
             <div className="card p-6 mb-8">
-              {[
-                ['Email',   'hello@bespokebikeboston.com', 'mailto:hello@bespokebikeboston.com'],
-                ['Phone',   '(617) 555-0190',              'tel:6175550190'],
-                ['Meet Up', 'The Esplanade, Hatch Shell',  'https://maps.google.com/?q=Hatch+Shell+Boston'],
-                ['Hours',   'Daily 9 AM – 7 PM',           null],
-                ['Instagram','@bespokebikeboston',          'https://instagram.com'],
-              ].map(([label, value, href]) => (
+              {contactRows.map(({ label, value, href }) => (
                 <div key={label} className="flex justify-between py-3 text-sm border-b border-white/[0.05] last:border-0">
                   <span className="text-muted">{label}</span>
                   {href ? (

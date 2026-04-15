@@ -3,6 +3,10 @@ import Link from 'next/link'
 import { Footer } from '@/components/layout/Footer'
 import { HeroParticles } from '@/components/ui/HeroParticles'
 import { InlineBookingWidgetClient as InlineBookingWidget } from '@/components/booking/InlineBookingWidgetClient'
+import { getSiteContent } from '@/lib/site-content'
+import { prisma } from '@/lib/prisma'
+
+export const dynamic = 'force-dynamic'
 
 const SERVICES = [
   {
@@ -29,49 +33,76 @@ const SERVICES = [
   },
 ]
 
-const TESTIMONIALS = [
+const FALLBACK_TESTIMONIALS = [
   {
-    text: 'This was the absolute highlight of our Boston trip. Our guide knew every hidden alley and had the playlist to match. We\'ve already booked again for our anniversary.',
-    author: 'Sarah M. — New York, NY',
+    id: 'f1',
+    quote: 'This was the absolute highlight of our Boston trip. Our guide knew every hidden alley and had the playlist to match. We\'ve already booked again for our anniversary.',
+    author: 'Sarah M.',
+    location: 'New York, NY',
+    rating: 5,
   },
   {
-    text: 'Did the bachelorette package and WOW. They set up champagne stops, had playlist requests, and the route was stunning. Everyone is still talking about it.',
-    author: 'Jess R. — Chicago, IL',
+    id: 'f2',
+    quote: 'Did the bachelorette package and WOW. They set up champagne stops, had playlist requests, and the route was stunning. Everyone is still talking about it.',
+    author: 'Jess R.',
+    location: 'Chicago, IL',
+    rating: 5,
   },
   {
-    text: 'I hadn\'t ridden a bike in 20 years. The lesson was patient, fun, and completely non-judgmental. By the end I was ready to join the main tour.',
-    author: 'Tom K. — Boston, MA',
+    id: 'f3',
+    quote: 'I hadn\'t ridden a bike in 20 years. The lesson was patient, fun, and completely non-judgmental. By the end I was ready to join the main tour.',
+    author: 'Tom K.',
+    location: 'Boston, MA',
+    rating: 5,
   },
 ]
 
-export default function HomePage() {
+export default async function HomePage() {
+  const [hero, dbTestimonials] = await Promise.all([
+    getSiteContent(['hero_tagline', 'hero_line1', 'hero_line2', 'hero_line3', 'hero_subheadline', 'hero_image_url']),
+    prisma.testimonial.findMany({ where: { isActive: true }, orderBy: { sortOrder: 'asc' } }),
+  ])
+
+  const testimonials = dbTestimonials.length > 0 ? dbTestimonials : FALLBACK_TESTIMONIALS
+
   return (
     <>
       {/* ── Hero ─────────────────────────────────────────────────────────── */}
       <section className="relative h-screen min-h-[600px] flex items-center justify-center
                           overflow-hidden bg-navy -mt-[70px]">
+        {/* Hero background image (if set) */}
+        {hero.hero_image_url && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={hero.hero_image_url}
+            alt=""
+            className="absolute inset-0 w-full h-full object-cover opacity-30"
+            aria-hidden="true"
+          />
+        )}
+
         {/* Background glow */}
         <div className="absolute inset-0 pointer-events-none">
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_60%_40%,rgba(74,45,176,0.5)_0%,transparent_60%)]" />
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_20%_80%,rgba(61,45,181,0.3)_0%,transparent_50%)]" />
         </div>
 
-        <HeroParticles />
+        {!hero.hero_image_url && <HeroParticles />}
 
         <div className="relative z-10 text-center max-w-3xl px-6 pt-[70px]">
           <div className="inline-block border border-gold/40 bg-gold/10 text-gold
                           text-[11px] tracking-[3px] uppercase px-5 py-2 rounded-sm mb-6">
-            ✦ Est. 2025 · Boston, MA ✦
+            {hero.hero_tagline}
           </div>
 
           <h1 className="font-display leading-[0.9] tracking-wide mb-3">
-            <span className="block text-[56px] sm:text-[76px] md:text-[96px] text-white">RIDE</span>
-            <span className="block text-[56px] sm:text-[76px] md:text-[96px] shimmer-gold">BOSTON</span>
-            <span className="block text-[56px] sm:text-[76px] md:text-[96px] text-white">IN STYLE</span>
+            <span className="block text-[56px] sm:text-[76px] md:text-[96px] text-white">{hero.hero_line1}</span>
+            <span className="block text-[56px] sm:text-[76px] md:text-[96px] shimmer-gold">{hero.hero_line2}</span>
+            <span className="block text-[56px] sm:text-[76px] md:text-[96px] text-white">{hero.hero_line3}</span>
           </h1>
 
           <p className="font-serif italic text-lg sm:text-xl text-iris-2 mb-10">
-            Guided rides. Iconic sights. Unforgettable night out.
+            {hero.hero_subheadline}
           </p>
 
           <div className="flex gap-4 justify-center flex-wrap">
@@ -90,9 +121,9 @@ export default function HomePage() {
       </section>
 
       {/* ── Services strip ────────────────────────────────────────────────── */}
-      <section className="bg-navy-2 border-t border-gold/20 border-b border-white/[0.06]">
+      <section className="bg-navy-2 border-t border-t-gold/20 border-b border-b-white/[0.06]">
         <div className="grid grid-cols-1 md:grid-cols-3">
-          {SERVICES.map((s, i) => (
+          {SERVICES.map((s) => (
             <Link
               key={s.title}
               href="/book"
@@ -140,12 +171,12 @@ export default function HomePage() {
         <p className="text-sm text-muted mb-12">★★★★★ 4.9 average across 200+ reviews</p>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
-          {TESTIMONIALS.map((t) => (
-            <div key={t.author} className="card p-8 text-left">
-              <div className="text-gold text-sm mb-4">★★★★★</div>
-              <p className="text-sm text-white/80 leading-relaxed italic mb-5">"{t.text}"</p>
+          {testimonials.map((t) => (
+            <div key={t.id} className="card p-8 text-left">
+              <div className="text-gold text-sm mb-4">{'★'.repeat(t.rating)}</div>
+              <p className="text-sm text-white/80 leading-relaxed italic mb-5">"{t.quote}"</p>
               <div className="text-[11px] font-semibold tracking-widest uppercase text-iris-2">
-                {t.author}
+                {t.author} — {t.location}
               </div>
             </div>
           ))}

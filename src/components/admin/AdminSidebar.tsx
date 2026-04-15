@@ -10,6 +10,7 @@ const NAV = [
   { href: '/admin/bookings',     icon: '📋', label: 'Bookings' },
   { href: '/admin/availability', icon: '📅', label: 'Availability' },
   { href: '/admin/discounts',    icon: '🏷', label: 'Discounts & Refunds' },
+  { href: '/admin/site',         icon: '✦',  label: 'Site Content' },
 ]
 
 export function AdminSidebar() {
