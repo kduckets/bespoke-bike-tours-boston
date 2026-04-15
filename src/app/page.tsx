@@ -60,7 +60,7 @@ const FALLBACK_TESTIMONIALS = [
 export default async function HomePage() {
   const [hero, dbTestimonials] = await Promise.all([
     getSiteContent(['hero_tagline', 'hero_line1', 'hero_line2', 'hero_line3', 'hero_subheadline', 'hero_image_url']),
-    prisma.testimonial.findMany({ where: { isActive: true }, orderBy: { sortOrder: 'asc' } }),
+    prisma.testimonial.findMany({ where: { isActive: true }, orderBy: { sortOrder: 'asc' } }).catch(() => []),
   ])
 
   const testimonials = dbTestimonials.length > 0 ? dbTestimonials : FALLBACK_TESTIMONIALS
