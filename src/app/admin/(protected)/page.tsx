@@ -1,93 +1,81 @@
 // src/app/admin/page.tsx
 import { Suspense } from 'react'
-import { unstable_cache } from 'next/cache'
-import { BikeWheelSpinner } from '@/components/ui/BikeWheelSpinner'
 import { prisma } from '@/lib/prisma'
 import { startOfMonth, endOfMonth, addDays, startOfDay, format } from 'date-fns'
 import { BookingStatus } from '@prisma/client'
 import { formatPrice, formatTime } from '@/lib/utils'
+import { BikeWheelSpinner } from '@/components/ui/BikeWheelSpinner'
 import Link from 'next/link'
 
-// ── Cached data fetchers ──────────────────────────────────────────────────────
+export const dynamic = 'force-dynamic'
 
-const getStatCards = unstable_cache(
-  async () => {
-    try {
-      const now = new Date()
-      const monthStart = startOfMonth(now)
-      const monthEnd = endOfMonth(now)
-      const activeStatuses = { in: [BookingStatus.CONFIRMED, BookingStatus.PARTIALLY_REFUNDED] }
+// ── Data fetchers ─────────────────────────────────────────────────────────────
 
-      const [revenueAgg, ridersAgg, bookingsThisMonth] = await Promise.all([
-        prisma.booking.aggregate({
-          where: { createdAt: { gte: monthStart, lte: monthEnd }, status: activeStatuses },
-          _sum: { totalCents: true },
-        }),
-        prisma.booking.aggregate({
-          where: { createdAt: { gte: monthStart, lte: monthEnd }, status: activeStatuses },
-          _sum: { guestCount: true },
-        }),
-        prisma.booking.count({ where: { createdAt: { gte: monthStart, lte: monthEnd } } }),
-      ])
+async function fetchStatCards() {
+  try {
+    const now = new Date()
+    const monthStart = startOfMonth(now)
+    const monthEnd = endOfMonth(now)
+    const activeStatuses = { in: [BookingStatus.CONFIRMED, BookingStatus.PARTIALLY_REFUNDED] }
 
-      return {
-        revenueThisMonth: revenueAgg._sum.totalCents ?? 0,
-        ridersThisMonth: ridersAgg._sum.guestCount ?? 0,
-        bookingsThisMonth,
-      }
-    } catch {
-      return { revenueThisMonth: 0, ridersThisMonth: 0, bookingsThisMonth: 0 }
+    const [revenueAgg, ridersAgg, bookingsThisMonth] = await Promise.all([
+      prisma.booking.aggregate({
+        where: { createdAt: { gte: monthStart, lte: monthEnd }, status: activeStatuses },
+        _sum: { totalCents: true },
+      }),
+      prisma.booking.aggregate({
+        where: { createdAt: { gte: monthStart, lte: monthEnd }, status: activeStatuses },
+        _sum: { guestCount: true },
+      }),
+      prisma.booking.count({ where: { createdAt: { gte: monthStart, lte: monthEnd } } }),
+    ])
+
+    return {
+      revenueThisMonth: revenueAgg._sum.totalCents ?? 0,
+      ridersThisMonth: ridersAgg._sum.guestCount ?? 0,
+      bookingsThisMonth,
     }
-  },
-  ['admin-stat-cards'],
-  { revalidate: 30, tags: ['admin-stats'] }
-)
+  } catch {
+    return { revenueThisMonth: 0, ridersThisMonth: 0, bookingsThisMonth: 0 }
+  }
+}
 
-const getRecentBookings = unstable_cache(
-  async () => {
-    try {
-      return await prisma.booking.findMany({
-        take: 6,
-        orderBy: { createdAt: 'desc' },
-        select: {
-          id: true, firstName: true, lastName: true, status: true,
-          totalCents: true, guestCount: true,
-          slot: { select: { date: true, startTime: true, tour: { select: { name: true } } } },
-        },
-      })
-    } catch {
-      return []
-    }
-  },
-  ['admin-recent-bookings'],
-  { revalidate: 30, tags: ['admin-stats'] }
-)
+async function fetchRecentBookings() {
+  try {
+    return await prisma.booking.findMany({
+      take: 6,
+      orderBy: { createdAt: 'desc' },
+      select: {
+        id: true, firstName: true, lastName: true, status: true,
+        totalCents: true, guestCount: true,
+        slot: { select: { date: true, startTime: true, tour: { select: { name: true } } } },
+      },
+    })
+  } catch {
+    return []
+  }
+}
 
-const getUpcomingSlots = unstable_cache(
-  async () => {
-    try {
-      const now = new Date()
-      const activeStatuses = { notIn: [BookingStatus.CANCELLED, BookingStatus.REFUNDED] }
-      const slots = await prisma.timeSlot.findMany({
-        where: { isActive: true, date: { gte: startOfDay(now), lte: addDays(now, 14) } },
-        select: {
-          id: true, date: true, startTime: true, capacity: true,
-          tour: { select: { name: true } },
-          _count: { select: { bookings: { where: { status: activeStatuses } } } },
-        },
-        orderBy: [{ date: 'asc' }, { startTime: 'asc' }],
-        take: 8,
-      })
-      return slots.map(s => ({ ...s, bookedCount: s._count.bookings, availableCount: s.capacity - s._count.bookings }))
-    } catch {
-      return []
-    }
-  },
-  ['admin-upcoming-slots'],
-  { revalidate: 30, tags: ['admin-stats'] }
-)
+async function fetchUpcomingSlots() {
+  try {
+    const now = new Date()
+    const slots = await prisma.timeSlot.findMany({
+      where: { isActive: true, date: { gte: startOfDay(now), lte: addDays(now, 14) } },
+      select: {
+        id: true, date: true, startTime: true, capacity: true,
+        tour: { select: { name: true } },
+        _count: { select: { bookings: { where: { status: { notIn: [BookingStatus.CANCELLED, BookingStatus.REFUNDED] } } } } },
+      },
+      orderBy: [{ date: 'asc' }, { startTime: 'asc' }],
+      take: 8,
+    })
+    return slots.map(s => ({ ...s, bookedCount: s._count.bookings, availableCount: s.capacity - s._count.bookings }))
+  } catch {
+    return []
+  }
+}
 
-// ── Section components (stream independently) ────────────────────────────────
+// ── Section components ────────────────────────────────────────────────────────
 
 const STATUS_BADGE: Record<BookingStatus, string> = {
   CONFIRMED:          'badge badge-confirmed',
@@ -99,7 +87,7 @@ const STATUS_BADGE: Record<BookingStatus, string> = {
 }
 
 async function StatCards() {
-  const stats = await getStatCards()
+  const stats = await fetchStatCards()
   const CARDS = [
     { label: 'Revenue (Month)', value: formatPrice(stats.revenueThisMonth, true), trend: '↑ 18%' },
     { label: 'Bookings',        value: String(stats.bookingsThisMonth),            trend: '↑ 12%' },
@@ -122,7 +110,7 @@ async function StatCards() {
 }
 
 async function RecentBookings() {
-  const bookings = await getRecentBookings()
+  const bookings = await fetchRecentBookings()
   return (
     <div className="card p-6">
       <div className="flex items-center justify-between mb-5">
@@ -151,7 +139,7 @@ async function RecentBookings() {
 }
 
 async function UpcomingCapacity() {
-  const slots = await getUpcomingSlots()
+  const slots = await fetchUpcomingSlots()
   return (
     <div className="card p-6">
       <div className="flex items-center justify-between mb-5">
