@@ -14,15 +14,16 @@ const schema = z.object({
   sortOrder: z.number().int().optional(),
 })
 
-export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await getServerSession(authOptions)
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
+  const { id } = await params
   const body = schema.safeParse(await req.json())
   if (!body.success) return NextResponse.json({ error: body.error.flatten() }, { status: 400 })
 
   const testimonial = await prisma.testimonial.update({
-    where: { id: params.id },
+    where: { id },
     data: body.data,
   })
 
@@ -30,11 +31,12 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   return NextResponse.json(testimonial)
 }
 
-export async function DELETE(_req: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await getServerSession(authOptions)
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  await prisma.testimonial.delete({ where: { id: params.id } })
+  const { id } = await params
+  await prisma.testimonial.delete({ where: { id } })
   revalidatePath('/')
   return NextResponse.json({ ok: true })
 }
