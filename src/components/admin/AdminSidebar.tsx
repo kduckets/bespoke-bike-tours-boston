@@ -10,7 +10,6 @@ const NAV = [
   { href: '/admin/bookings',     icon: '📋', label: 'Bookings' },
   { href: '/admin/availability', icon: '📅', label: 'Availability' },
   { href: '/admin/discounts',    icon: '🏷', label: 'Discounts & Refunds' },
-  { href: '/admin/site',         icon: '✦',  label: 'Site Content' },
 ]
 
 export function AdminSidebar() {
@@ -50,6 +49,18 @@ export function AdminSidebar() {
 
         <div className="h-px bg-white/[0.06] mx-6 my-4" />
         <div className="text-[9px] tracking-[3px] uppercase text-muted px-6 mb-3">Site</div>
+        <Link
+          href="/admin/site"
+          className={cn(
+            'flex items-center gap-3 px-6 py-3.5 text-sm transition-all duration-150 border-l-[3px]',
+            pathname.startsWith('/admin/site')
+              ? 'bg-gold/8 border-gold text-gold'
+              : 'border-transparent text-white/65 hover:bg-white/[0.03] hover:text-white'
+          )}
+        >
+          <span className="text-base w-5 text-center">✦</span>
+          Site Content
+        </Link>
         <Link
           href="/"
           target="_blank"
