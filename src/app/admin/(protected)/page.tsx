@@ -12,27 +12,31 @@ import Link from 'next/link'
 
 const getStatCards = unstable_cache(
   async () => {
-    const now = new Date()
-    const monthStart = startOfMonth(now)
-    const monthEnd = endOfMonth(now)
-    const activeStatuses = { in: [BookingStatus.CONFIRMED, BookingStatus.PARTIALLY_REFUNDED] }
+    try {
+      const now = new Date()
+      const monthStart = startOfMonth(now)
+      const monthEnd = endOfMonth(now)
+      const activeStatuses = { in: [BookingStatus.CONFIRMED, BookingStatus.PARTIALLY_REFUNDED] }
 
-    const [revenueAgg, ridersAgg, bookingsThisMonth] = await Promise.all([
-      prisma.booking.aggregate({
-        where: { createdAt: { gte: monthStart, lte: monthEnd }, status: activeStatuses },
-        _sum: { totalCents: true },
-      }),
-      prisma.booking.aggregate({
-        where: { createdAt: { gte: monthStart, lte: monthEnd }, status: activeStatuses },
-        _sum: { guestCount: true },
-      }),
-      prisma.booking.count({ where: { createdAt: { gte: monthStart, lte: monthEnd } } }),
-    ])
+      const [revenueAgg, ridersAgg, bookingsThisMonth] = await Promise.all([
+        prisma.booking.aggregate({
+          where: { createdAt: { gte: monthStart, lte: monthEnd }, status: activeStatuses },
+          _sum: { totalCents: true },
+        }),
+        prisma.booking.aggregate({
+          where: { createdAt: { gte: monthStart, lte: monthEnd }, status: activeStatuses },
+          _sum: { guestCount: true },
+        }),
+        prisma.booking.count({ where: { createdAt: { gte: monthStart, lte: monthEnd } } }),
+      ])
 
-    return {
-      revenueThisMonth: revenueAgg._sum.totalCents ?? 0,
-      ridersThisMonth: ridersAgg._sum.guestCount ?? 0,
-      bookingsThisMonth,
+      return {
+        revenueThisMonth: revenueAgg._sum.totalCents ?? 0,
+        ridersThisMonth: ridersAgg._sum.guestCount ?? 0,
+        bookingsThisMonth,
+      }
+    } catch {
+      return { revenueThisMonth: 0, ridersThisMonth: 0, bookingsThisMonth: 0 }
     }
   },
   ['admin-stat-cards'],
@@ -40,35 +44,44 @@ const getStatCards = unstable_cache(
 )
 
 const getRecentBookings = unstable_cache(
-  async () =>
-    prisma.booking.findMany({
-      take: 6,
-      orderBy: { createdAt: 'desc' },
-      select: {
-        id: true, firstName: true, lastName: true, status: true,
-        totalCents: true, guestCount: true,
-        slot: { select: { date: true, startTime: true, tour: { select: { name: true } } } },
-      },
-    }),
+  async () => {
+    try {
+      return await prisma.booking.findMany({
+        take: 6,
+        orderBy: { createdAt: 'desc' },
+        select: {
+          id: true, firstName: true, lastName: true, status: true,
+          totalCents: true, guestCount: true,
+          slot: { select: { date: true, startTime: true, tour: { select: { name: true } } } },
+        },
+      })
+    } catch {
+      return []
+    }
+  },
   ['admin-recent-bookings'],
   { revalidate: 30, tags: ['admin-stats'] }
 )
 
 const getUpcomingSlots = unstable_cache(
   async () => {
-    const now = new Date()
-    const activeStatuses = { notIn: [BookingStatus.CANCELLED, BookingStatus.REFUNDED] }
-    const slots = await prisma.timeSlot.findMany({
-      where: { isActive: true, date: { gte: startOfDay(now), lte: addDays(now, 14) } },
-      select: {
-        id: true, date: true, startTime: true, capacity: true,
-        tour: { select: { name: true } },
-        _count: { select: { bookings: { where: { status: activeStatuses } } } },
-      },
-      orderBy: [{ date: 'asc' }, { startTime: 'asc' }],
-      take: 8,
-    })
-    return slots.map(s => ({ ...s, bookedCount: s._count.bookings, availableCount: s.capacity - s._count.bookings }))
+    try {
+      const now = new Date()
+      const activeStatuses = { notIn: [BookingStatus.CANCELLED, BookingStatus.REFUNDED] }
+      const slots = await prisma.timeSlot.findMany({
+        where: { isActive: true, date: { gte: startOfDay(now), lte: addDays(now, 14) } },
+        select: {
+          id: true, date: true, startTime: true, capacity: true,
+          tour: { select: { name: true } },
+          _count: { select: { bookings: { where: { status: activeStatuses } } } },
+        },
+        orderBy: [{ date: 'asc' }, { startTime: 'asc' }],
+        take: 8,
+      })
+      return slots.map(s => ({ ...s, bookedCount: s._count.bookings, availableCount: s.capacity - s._count.bookings }))
+    } catch {
+      return []
+    }
   },
   ['admin-upcoming-slots'],
   { revalidate: 30, tags: ['admin-stats'] }
