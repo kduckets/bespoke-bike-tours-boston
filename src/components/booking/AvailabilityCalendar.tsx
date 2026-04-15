@@ -80,7 +80,7 @@ export function AvailabilityCalendar({ tourSlug, onSelectSlot, selectedSlot }: P
       />
 
       {/* Legend */}
-      <div className="flex gap-5 text-xs text-muted mt-2 mb-6">
+      <div className="flex flex-wrap gap-x-5 gap-y-2 text-xs text-muted mt-2 mb-6">
         <span className="flex items-center gap-1.5">
           <span className="w-3 h-3 rounded border border-white/20 bg-white/[0.04]" />
           Available

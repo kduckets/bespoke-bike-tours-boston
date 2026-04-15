@@ -62,7 +62,7 @@ function Step1TourSelect({ selectedTour, guests, onSelectTour, onAdjustGuests, o
   onSelectTour: (s: string) => void; onAdjustGuests: (d: number) => void; onNext: () => void
 }) {
   return (
-    <div className="card p-10">
+    <div className="card p-5 sm:p-10">
       <h3 className="font-display text-3xl tracking-wide mb-6">Select Your Experience</h3>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
         {TOURS.map((tour) => {
@@ -107,7 +107,7 @@ function Step2DateTime({ tourSlug, selectedSlot, onSelect, onBack, onNext }: {
   onSelect: (s: AvailableSlot) => void; onBack: () => void; onNext: () => void
 }) {
   return (
-    <div className="card p-10">
+    <div className="card p-5 sm:p-10">
       <h3 className="font-display text-3xl tracking-wide mb-6">Pick a Date & Time</h3>
       <AvailabilityCalendar tourSlug={tourSlug} selectedSlot={selectedSlot} onSelectSlot={onSelect} />
       <div className="flex gap-3 mt-8">
@@ -137,7 +137,7 @@ function Step3GuestInfo({ info, onChange, loading, onBack, onNext }: {
   const valid = info.firstName.trim() && info.lastName.trim() && emailValid && info.phone.trim().length >= 7
 
   return (
-    <div className="card p-10">
+    <div className="card p-5 sm:p-10">
       <h3 className="font-display text-3xl tracking-wide mb-6">Your Details</h3>
       <div className="grid gap-4">
         <div className="grid grid-cols-2 gap-4">
@@ -239,7 +239,7 @@ function PaymentForm({ totalCents, subtotalCents, guests, tourName, bookingRefer
   const discountCents = promoValidation?.discountCents ?? 0
 
   return (
-    <div className="card p-10">
+    <div className="card p-5 sm:p-10">
       <h3 className="font-display text-3xl tracking-wide mb-6">Payment</h3>
 
       {/* Order summary */}

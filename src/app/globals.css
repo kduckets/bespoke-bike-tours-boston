@@ -190,7 +190,7 @@ textarea.field { resize: vertical; }
 
 /* ─── react-day-picker theme ─────────────────────────────────────────────── */
 .rdp {
-  --rdp-cell-size: 44px;
+  --rdp-cell-size: 40px;
   --rdp-accent-color: #F5C842;
   --rdp-background-color: rgba(245,200,66,0.1);
   --rdp-accent-color-dark: #F5C842;
@@ -201,6 +201,10 @@ textarea.field { resize: vertical; }
   color: white;
   font-family: inherit;
 }
+@media (max-width: 480px) {
+  .rdp { --rdp-cell-size: 36px; }
+}
+
 .rdp-caption_label { font-family: var(--font-display, sans-serif); font-size: 20px; letter-spacing: 2px; color: white; }
 .rdp-head_cell { color: #8B88B8; font-size: 11px; font-weight: 500; letter-spacing: 1px; }
 .rdp-day { border-radius: 6px; font-size: 13px; color: rgba(255,255,255,0.3); }
