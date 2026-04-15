@@ -34,11 +34,10 @@ export function InlineBookingWidget() {
       .then((r) => r.json())
       .then((data: AvailabilityDay[]) => {
         setAvailability(data)
-        // Pre-select first available date
         if (data.length > 0) setSelectedDate(data[0].date)
-        setLoading(false)
       })
-      .catch(() => setLoading(false))
+      .catch(() => {})
+      .finally(() => setLoading(false))
   }, [tourSlug])
 
   // Reset slot when date changes

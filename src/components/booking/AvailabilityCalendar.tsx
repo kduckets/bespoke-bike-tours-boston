@@ -24,8 +24,9 @@ export function AvailabilityCalendar({ tourSlug, onSelectSlot, selectedSlot }: P
       .then((r) => r.json())
       .then((data: AvailabilityDay[]) => {
         setAvailability(data)
-        setLoading(false)
       })
+      .catch(() => {})
+      .finally(() => setLoading(false))
   }, [tourSlug])
 
   const availableDates = availability.map((a) => parseISO(a.date))
