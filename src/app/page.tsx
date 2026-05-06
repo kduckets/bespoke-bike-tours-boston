@@ -9,9 +9,7 @@ import { prisma } from '@/lib/prisma'
 export const revalidate = 60
 
 const FALLBACK_SERVICES = [
-  { id: 's1', badge: '★ Most Popular', title: 'THE MAIN EVENT',  desc: 'A fully customized 2.5-hour guided tour of the Boston area — we tailor the route, the pace, and the vibe to your group.', price: '$75',  unit: '/ person',    featured: true  },
-  { id: 's2', badge: 'Learn',          title: 'BIKE LESSONS',    desc: 'Never rode, or need a refresh? Private and semi-private sessions to get you rolling with confidence.',                              price: '$55',  unit: '/ session',   featured: false },
-  { id: 's3', badge: 'Exclusive',      title: 'PRIVATE GROUP',   desc: 'Bachelorettes, birthdays, corporate outings — your crew, your route, your vibe. Fully customizable.',                              price: '$450', unit: '+ group base', featured: false },
+  { id: 's1', badge: '★ Most Popular', title: 'THE MAIN EVENT',  desc: 'A fully customized 2.5-hour guided tour of the Boston area — we tailor the route, the pace, and the vibe to your group.', price: '$75',  unit: '/ person',    featured: true  }
 ]
 
 const FALLBACK_TESTIMONIALS = [
@@ -109,7 +107,11 @@ export default async function HomePage() {
 
       {/* ── Services strip ────────────────────────────────────────────────── */}
       <section className="bg-navy-2 border-t border-t-gold/20 border-b border-b-white/[0.06]">
-        <div className="grid grid-cols-1 md:grid-cols-3">
+        <div className={`grid grid-cols-1 ${
+          services.length === 1 ? 'max-w-xl mx-auto' :
+          services.length === 2 ? 'md:grid-cols-2' :
+          'md:grid-cols-3'
+        }`}>
           {services.map((s) => (
             <Link
               key={s.title}
