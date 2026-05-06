@@ -10,7 +10,6 @@ const NAV = [
   { href: '/admin/bookings',     icon: '📋', label: 'Bookings' },
   { href: '/admin/availability', icon: '📅', label: 'Availability' },
   { href: '/admin/discounts',    icon: '🏷', label: 'Discounts & Refunds' },
-  { href: '/admin/tours',        icon: '🚲', label: 'Tours' },
 ]
 
 export function AdminSidebar() {
@@ -73,6 +72,18 @@ export function AdminSidebar() {
         >
           <span className="text-base w-5 text-center">◈</span>
           Services
+        </Link>
+        <Link
+          href="/admin/tours"
+          className={cn(
+            'flex items-center gap-3 px-6 py-3.5 text-sm transition-all duration-150 border-l-[3px]',
+            pathname.startsWith('/admin/tours')
+              ? 'bg-gold/8 border-gold text-gold'
+              : 'border-transparent text-white/65 hover:bg-white/[0.03] hover:text-white'
+          )}
+        >
+          <span className="text-base w-5 text-center">🚲</span>
+          Tours
         </Link>
         <Link
           href="/"
