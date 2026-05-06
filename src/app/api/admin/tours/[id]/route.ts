@@ -50,6 +50,8 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
     )
   }
 
+  // Remove slots first (no active bookings at this point, so safe to cascade)
+  await prisma.timeSlot.deleteMany({ where: { tourId: id } })
   await prisma.tour.delete({ where: { id } })
   revalidatePath('/tours')
   revalidatePath('/book')

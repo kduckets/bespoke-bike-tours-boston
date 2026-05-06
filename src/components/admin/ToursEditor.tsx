@@ -134,7 +134,7 @@ export function ToursEditor({ initial }: Props) {
       setTours(t => t.filter(x => x.id !== id))
       router.refresh()
     } else {
-      const data = await res.json()
+      const data = await res.json().catch(() => ({}))
       alert(typeof data.error === 'string' ? data.error : 'Failed to delete tour.')
     }
   }
