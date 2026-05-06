@@ -8,10 +8,6 @@ import { prisma } from '@/lib/prisma'
 
 export const revalidate = 60
 
-const FALLBACK_SERVICES = [
-  { id: 's1', badge: '★ Most Popular', title: 'THE MAIN EVENT',  desc: 'A fully customized 2.5-hour guided tour of the Boston area — we tailor the route, the pace, and the vibe to your group.', price: '$75',  unit: '/ person',    featured: true  }
-]
-
 const FALLBACK_TESTIMONIALS = [
   {
     id: 'f1',
@@ -42,13 +38,7 @@ export default async function HomePage() {
     prisma.testimonial.findMany({ where: { isActive: true }, orderBy: { sortOrder: 'asc' } }).catch(() => []),
   ])
 
-  // Wrapped in .then() so a sync throw (pre-migration) becomes a caught rejection
-  const dbServices = await Promise.resolve()
-    .then(() => prisma.service.findMany({ where: { isActive: true }, orderBy: { sortOrder: 'asc' } }))
-    .catch(() => [])
-
   const testimonials = dbTestimonials.length > 0 ? dbTestimonials : FALLBACK_TESTIMONIALS
-  const services = dbServices.length > 0 ? dbServices : FALLBACK_SERVICES
 
   return (
     <>
@@ -102,45 +92,6 @@ export default async function HomePage() {
           <div className="w-px h-10 bg-gradient-to-b from-gold/60 to-transparent"
                style={{ animation: 'scroll-pulse 2s ease-in-out infinite' }} />
           <span>Scroll</span>
-        </div>
-      </section>
-
-      {/* ── Services strip ────────────────────────────────────────────────── */}
-      <section className="bg-navy-2 border-t border-t-gold/20 border-b border-b-white/[0.06]">
-        <div className={`grid grid-cols-1 ${
-          services.length === 1 ? 'max-w-xl mx-auto' :
-          services.length === 2 ? 'md:grid-cols-2' :
-          'md:grid-cols-3'
-        }`}>
-          {services.map((s) => (
-            <Link
-              key={s.title}
-              href="/book"
-              className={`group relative px-10 py-12 border-r border-white/[0.06] last:border-r-0
-                          transition-colors hover:bg-purple-2/15 overflow-hidden
-                          ${s.featured ? 'bg-purple-2/20' : ''}`}
-            >
-              {/* Animated gold top bar */}
-              <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-gold-2 via-gold-3 to-gold
-                              scale-x-0 group-hover:scale-x-100 origin-left transition-transform duration-300
-                              [.featured_&]:scale-x-100" />
-              {s.featured && (
-                <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-gold-2 via-gold-3 to-gold" />
-              )}
-
-              <div className="text-[10px] tracking-[3px] uppercase text-gold mb-3">{s.badge}</div>
-              <div className="font-display text-4xl tracking-wide mb-3">{s.title}</div>
-              <p className="text-sm text-muted leading-relaxed mb-5">{s.desc}</p>
-              <div className="text-3xl font-light">
-                {s.price}
-                <small className="text-sm text-muted ml-1">{s.unit}</small>
-              </div>
-
-              <span className="absolute bottom-10 right-10 text-gold opacity-0
-                               group-hover:opacity-100 group-hover:translate-x-1
-                               transition-all duration-200 text-xl">→</span>
-            </Link>
-          ))}
         </div>
       </section>
 

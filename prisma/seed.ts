@@ -95,17 +95,6 @@ async function main() {
     }
   }
 
-  // Services (homepage display cards)
-  const serviceData = [
-    { badge: '★ Most Popular', title: 'THE MAIN EVENT', desc: 'A fully customized 2.5-hour guided tour of the Boston area — we tailor the route, the pace, and the vibe to your group.', price: '$75', unit: '/ person', featured: true,  sortOrder: 0 },
-    { badge: 'Learn',           title: 'BIKE LESSONS',   desc: 'Never rode, or need a refresh? Private and semi-private sessions to get you rolling with confidence.',              price: '$55', unit: '/ session', featured: false, sortOrder: 1 },
-    { badge: 'Exclusive',       title: 'PRIVATE GROUP',  desc: 'Bachelorettes, birthdays, corporate outings — your crew, your route, your vibe. Fully customizable.',               price: '$450', unit: '+ group base', featured: false, sortOrder: 2 },
-  ]
-  for (const s of serviceData) {
-    const existing = await prisma.service.findFirst({ where: { title: s.title } })
-    if (!existing) await prisma.service.create({ data: s })
-  }
-
   // Promo codes
   await prisma.promoCode.upsert({
     where: { code: 'SUMMER20' },

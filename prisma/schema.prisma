@@ -147,22 +147,6 @@ model SiteContent {
   updatedAt DateTime @updatedAt
 }
 
-// ─── CMS: Services ────────────────────────────────────────────────────────────
-
-model Service {
-  id        String   @id @default(cuid())
-  badge     String
-  title     String
-  desc      String   @db.Text
-  price     String   // display string e.g. "$75"
-  unit      String   // e.g. "/ person"
-  featured  Boolean  @default(false)
-  isActive  Boolean  @default(true)
-  sortOrder Int      @default(0)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
 // ─── CMS: Testimonials ────────────────────────────────────────────────────────
 
 model Testimonial {
