@@ -3,6 +3,7 @@ import type { Metadata } from 'next'
 import { Suspense } from 'react'
 import { BookingFlow } from '@/components/booking/BookingFlow'
 import { buildMetadata } from '@/lib/metadata'
+import { prisma } from '@/lib/prisma'
 
 export const metadata: Metadata = buildMetadata({
   title: 'Book a Tour',
@@ -10,7 +11,13 @@ export const metadata: Metadata = buildMetadata({
   path: '/book',
 })
 
-export default function BookPage() {
+export default async function BookPage() {
+  const tours = await prisma.tour.findMany({
+    where: { isActive: true },
+    orderBy: { createdAt: 'asc' },
+    select: { slug: true, name: true, duration: true, maxCapacity: true, pricePerPerson: true, groupBasePrice: true },
+  })
+
   return (
     <div className="pt-[70px] min-h-screen">
       <div className="max-w-3xl mx-auto px-6 py-16">
@@ -25,7 +32,7 @@ export default function BookPage() {
             </div>
           </div>
         }>
-          <BookingFlow />
+          <BookingFlow tours={tours} />
         </Suspense>
       </div>
     </div>

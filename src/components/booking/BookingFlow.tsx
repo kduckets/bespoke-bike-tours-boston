@@ -15,12 +15,26 @@ import type { AvailableSlot, PromoValidation } from '@/types'
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!)
 
-const TOURS = [
-  { slug: 'main-event',    name: 'The Main Event',  detail: '2.5 hrs · Group · Up to 12 riders',  priceCents: 7500 },
-  { slug: 'sunset-ride',   name: 'The Sunset Ride', detail: '2 hrs · Group · Golden hour magic',   priceCents: 8500 },
-  { slug: 'bike-lessons',  name: 'Bike Lessons',    detail: '1 hr · Private or semi-private',       priceCents: 5500 },
-  { slug: 'private-group', name: 'Private Group',   detail: 'Custom route · 6–20 riders',           priceCents: 4500, basePrice: 45000 },
-]
+export interface TourData {
+  slug: string
+  name: string
+  duration: string
+  maxCapacity: number
+  pricePerPerson: number
+  groupBasePrice: number | null
+}
+
+type TourOption = { slug: string; name: string; detail: string; priceCents: number; basePrice?: number }
+
+function toOption(t: TourData): TourOption {
+  return {
+    slug: t.slug,
+    name: t.name,
+    detail: `${t.duration} · Up to ${t.maxCapacity} riders`,
+    priceCents: t.pricePerPerson,
+    ...(t.groupBasePrice != null ? { basePrice: t.groupBasePrice } : {}),
+  }
+}
 
 // ─── Step indicator ───────────────────────────────────────────────────────────
 
@@ -57,15 +71,15 @@ function StepIndicator({ current }: { current: number }) {
 
 // ─── Step 1 ───────────────────────────────────────────────────────────────────
 
-function Step1TourSelect({ selectedTour, guests, onSelectTour, onAdjustGuests, onNext }: {
-  selectedTour: string; guests: number
+function Step1TourSelect({ tours, selectedTour, guests, onSelectTour, onAdjustGuests, onNext }: {
+  tours: TourOption[]; selectedTour: string; guests: number
   onSelectTour: (s: string) => void; onAdjustGuests: (d: number) => void; onNext: () => void
 }) {
   return (
     <div className="card p-5 sm:p-10">
       <h3 className="font-display text-3xl tracking-wide mb-6">Select Your Experience</h3>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
-        {TOURS.map((tour) => {
+        {tours.map((tour) => {
           const selected = selectedTour === tour.slug
           return (
             <button key={tour.slug} onClick={() => onSelectTour(tour.slug)}
@@ -334,11 +348,12 @@ function ConfirmationRedirect({ reference }: { reference: string }) {
 
 // ─── Orchestrator ─────────────────────────────────────────────────────────────
 
-export function BookingFlow() {
+export function BookingFlow({ tours: rawTours }: { tours: TourData[] }) {
   const searchParams = useSearchParams()
+  const tours = rawTours.map(toOption)
 
-  const initialTour    = searchParams.get('tour')   ?? 'main-event'
-  const initialGuests  = Math.max(1, Number(searchParams.get('guests') ?? 2))
+  const initialTour   = searchParams.get('tour') ?? tours[0]?.slug ?? ''
+  const initialGuests = Math.max(1, Number(searchParams.get('guests') ?? 2))
 
   const [step, setStep]                   = useState(1)
   const [selectedTour, setSelectedTour]   = useState(initialTour)
@@ -355,7 +370,7 @@ export function BookingFlow() {
   const [creatingBooking, setCreatingBooking] = useState(false)
   const [confirmed, setConfirmed]         = useState(false)
 
-  const tourObj = TOURS.find((t) => t.slug === selectedTour) ?? TOURS[0]
+  const tourObj = tours.find((t) => t.slug === selectedTour) ?? tours[0]
 
   async function handleCreateBooking() {
     if (!selectedSlot) return
@@ -420,7 +435,7 @@ export function BookingFlow() {
       )}
 
       {step === 1 && (
-        <Step1TourSelect selectedTour={selectedTour} guests={guests}
+        <Step1TourSelect tours={tours} selectedTour={selectedTour} guests={guests}
           onSelectTour={setSelectedTour}
           onAdjustGuests={(d) => setGuests((g) => Math.max(1, Math.min(20, g + d)))}
           onNext={() => setStep(2)} />

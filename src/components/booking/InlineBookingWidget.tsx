@@ -6,27 +6,36 @@ import { format, parseISO } from 'date-fns'
 import { formatTime, formatPrice } from '@/lib/utils'
 import type { AvailabilityDay, AvailableSlot } from '@/types'
 
-const TOURS = [
-  { value: 'main-event',    label: 'The Main Event',   price: 7500 },
-  { value: 'sunset-ride',   label: 'The Sunset Ride',  price: 8500 },
-  { value: 'bike-lessons',  label: 'Bike Lessons',     price: 5500 },
-  { value: 'private-group', label: 'Private Group',    price: 4500 },
-]
+interface TourOption { value: string; label: string; price: number }
 
 const TABS = ['Individual / Couple', 'Group (6+)', 'Private Event'] as const
 
 export function InlineBookingWidget() {
   const router = useRouter()
   const [activeTab, setActiveTab] = useState(0)
-  const [tourSlug, setTourSlug] = useState(TOURS[0].value)
+  const [tours, setTours] = useState<TourOption[]>([])
+  const [tourSlug, setTourSlug] = useState('')
   const [guests, setGuests] = useState('2')
   const [availability, setAvailability] = useState<AvailabilityDay[]>([])
   const [selectedDate, setSelectedDate] = useState('')
   const [selectedSlotId, setSelectedSlotId] = useState('')
   const [loading, setLoading] = useState(true)
 
-  // Fetch availability whenever tour changes
+  // Fetch tour list once on mount
   useEffect(() => {
+    fetch('/api/tours')
+      .then((r) => r.json())
+      .then((data: { slug: string; name: string; pricePerPerson: number }[]) => {
+        const options = data.map((t) => ({ value: t.slug, label: t.name, price: t.pricePerPerson }))
+        setTours(options)
+        if (options.length > 0) setTourSlug(options[0].value)
+      })
+      .catch(() => {})
+  }, [])
+
+  // Fetch availability whenever tour changes (skip until slug is known)
+  useEffect(() => {
+    if (!tourSlug) return
     setLoading(true)
     setSelectedDate('')
     setSelectedSlotId('')
@@ -55,7 +64,7 @@ export function InlineBookingWidget() {
     router.push(`/book?${params.toString()}`)
   }
 
-  const selectedTour = TOURS.find((t) => t.value === tourSlug)!
+  const selectedTour = tours.find((t) => t.value === tourSlug)
 
   return (
     <div className="card overflow-hidden">
@@ -86,7 +95,7 @@ export function InlineBookingWidget() {
               value={tourSlug}
               onChange={(e) => setTourSlug(e.target.value)}
             >
-              {TOURS.map((t) => (
+              {tours.map((t) => (
                 <option key={t.value} value={t.value}>
                   {t.label} — {formatPrice(t.price)}/person
                 </option>
