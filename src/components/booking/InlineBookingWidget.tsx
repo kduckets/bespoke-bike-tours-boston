@@ -50,7 +50,7 @@ export function InlineBookingWidget() {
   return (
     <div className="card overflow-hidden">
       <div className="p-8">
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+        <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 mb-4">
           {/* Date */}
           <div className="flex flex-col gap-2">
             <label className="text-[11px] tracking-[2px] uppercase text-muted">Date</label>
@@ -64,15 +64,20 @@ export function InlineBookingWidget() {
               {!loading && availability.length === 0 && (
                 <option>No dates available</option>
               )}
-              {availability.map((a) => {
-                const totalAvailable = a.slots.reduce((sum, s) => sum + s.availableCount, 0)
-                return (
-                  <option key={a.date} value={a.date}>
-                    {format(parseISO(a.date), 'EEE, MMM d')} ({totalAvailable} spots)
-                  </option>
-                )
-              })}
+              {availability.map((a) => (
+                <option key={a.date} value={a.date}>
+                  {format(parseISO(a.date), 'EEE, MMM d')}
+                </option>
+              ))}
             </select>
+          </div>
+
+          {/* Time note */}
+          <div className="flex flex-col gap-2">
+            <label className="text-[11px] tracking-[2px] uppercase text-muted opacity-0 select-none">Time</label>
+            <div className="field flex items-center text-sm text-muted bg-transparent border-white/10 cursor-default select-none">
+              ⏱ All rides at 10 AM
+            </div>
           </div>
 
           {/* Guests */}
