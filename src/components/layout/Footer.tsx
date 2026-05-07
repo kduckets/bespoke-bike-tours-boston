@@ -6,7 +6,7 @@ export function Footer() {
   return (
     <footer className="bg-[#08091E] border-t border-gold/15 pt-16 pb-10 px-10 mt-0">
       <div className="max-w-6xl mx-auto">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-10 mb-12">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-10 mb-12">
           {/* Brand */}
           <div className="md:col-span-1">
             <Image
@@ -17,25 +17,15 @@ export function Footer() {
               className="rounded-full mb-4"
             />
             <p className="text-sm text-muted leading-relaxed max-w-xs">
-              A little bit of Vegas on two wheels. We're not your history class — we're the best
-              afternoon (or night) you'll have in this city.
+              A little bit of Vegas on two wheels. We&rsquo;re not your history class — we&rsquo;re the best
+              afternoon (or night) you&rsquo;ll have in this city.
             </p>
-          </div>
-
-          {/* Tours */}
-          <div>
-            <div className="section-label">Tours</div>
-            {['The Main Event', 'The Sunset Ride', 'Bike Lessons', 'Private Groups'].map((t) => (
-              <Link key={t} href="/tours" className="block text-sm text-muted mb-2.5 hover:text-white transition-colors">
-                {t}
-              </Link>
-            ))}
           </div>
 
           {/* Company */}
           <div>
             <div className="section-label">Company</div>
-            {[['About Us', '/about'], ['Gallery', '#'], ['Press', '#'], ['Careers', '#']].map(([label, href]) => (
+            {[['About Us', '/about'], ['Contact', '/contact']].map(([label, href]) => (
               <Link key={label} href={href} className="block text-sm text-muted mb-2.5 hover:text-white transition-colors">
                 {label}
               </Link>

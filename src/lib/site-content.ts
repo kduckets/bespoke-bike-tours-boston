@@ -13,6 +13,8 @@ export const SITE_CONTENT_DEFAULTS: Record<string, string> = {
   contact_hours:    'Daily 9 AM – 7 PM',
   contact_instagram_handle: '@bespokebikeboston',
   contact_instagram_url:    'https://instagram.com/bespokebikeboston',
+  about_quote: 'We built the tour we always wanted to take — and Boston has never been the same.',
+  about_body:  'Bespoke Bike Tours Boston was born from a simple idea: this city is one of the most beautiful, walkable — and rideable — cities in America, and nobody was showing it off in style. So we did something about it. No khaki shirts, no monotone history lectures. Just great routes, great energy, and genuinely unforgettable experiences.',
 }
 
 export async function getSiteContent(keys: string[]): Promise<Record<string, string>> {

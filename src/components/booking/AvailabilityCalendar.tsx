@@ -22,9 +22,7 @@ export function AvailabilityCalendar({ tourSlug, onSelectSlot, selectedSlot }: P
     setLoading(true)
     fetch(`/api/availability?tour=${tourSlug}&days=60`)
       .then((r) => r.json())
-      .then((data: AvailabilityDay[]) => {
-        setAvailability(data)
-      })
+      .then((data: AvailabilityDay[]) => setAvailability(data))
       .catch(() => {})
       .finally(() => setLoading(false))
   }, [tourSlug])
@@ -32,17 +30,17 @@ export function AvailabilityCalendar({ tourSlug, onSelectSlot, selectedSlot }: P
   const availableDates = availability.map((a) => parseISO(a.date))
   const today = startOfDay(new Date())
 
-  const slotsForSelectedDate = selectedDate
-    ? availability.find(
-        (a) => a.date === format(selectedDate, 'yyyy-MM-dd')
-      )?.slots ?? []
-    : []
-
   function handleDayClick(day: Date) {
     const dateStr = format(day, 'yyyy-MM-dd')
-    const hasSlots = availability.some((a) => a.date === dateStr)
-    if (!hasSlots || isBefore(day, today)) return
+    const dayData = availability.find((a) => a.date === dateStr)
+    if (!dayData || isBefore(day, today)) return
+
     setSelectedDate(day)
+
+    // Auto-select 10am slot, or fall back to first available slot
+    const preferred = dayData.slots.find((s) => s.startTime === '10:00')
+    const slot = preferred ?? dayData.slots[0]
+    if (slot) onSelectSlot(slot)
   }
 
   if (loading) {
@@ -96,45 +94,19 @@ export function AvailabilityCalendar({ tourSlug, onSelectSlot, selectedSlot }: P
         </span>
       </div>
 
-      {/* Time slots */}
-      {selectedDate && (
-        <div>
-          <h4 className="text-sm font-semibold tracking-widest uppercase text-muted mb-3">
-            Available Times — {format(selectedDate, 'EEEE, MMM d')}
-          </h4>
-
-          {slotsForSelectedDate.length === 0 ? (
-            <p className="text-sm text-muted">No available times for this date.</p>
-          ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              {slotsForSelectedDate.map((slot) => {
-                const isSelected = selectedSlot?.id === slot.id
-                const isFewLeft = slot.availableCount <= 3
-
-                return (
-                  <button
-                    key={slot.id}
-                    onClick={() => onSelectSlot(slot)}
-                    className={`border rounded-lg p-4 text-center transition-all duration-200
-                                ${isSelected
-                                  ? 'border-gold bg-gold/8 text-gold font-semibold'
-                                  : 'border-white/10 hover:border-iris hover:bg-iris/15'}`}
-                  >
-                    <div className="text-sm font-medium">{formatTime(slot.startTime)}</div>
-                    <div className={`text-xs mt-1 ${isFewLeft ? 'text-gold' : 'text-muted'}`}>
-                      {slot.availableCount} spot{slot.availableCount !== 1 ? 's' : ''} left
-                      {isFewLeft && ' ⚡'}
-                    </div>
-                  </button>
-                )
-              })}
-            </div>
-          )}
+      {selectedSlot && selectedDate && (
+        <div className="flex items-center gap-3 bg-gold/8 border border-gold/20 rounded-lg px-4 py-3 text-sm">
+          <span className="text-gold text-base">✓</span>
+          <span>
+            <span className="font-semibold">{format(selectedDate, 'EEEE, MMMM d')}</span>
+            <span className="text-muted ml-2">at {formatTime(selectedSlot.startTime)}</span>
+            <span className="text-muted ml-2">· {selectedSlot.availableCount} spot{selectedSlot.availableCount !== 1 ? 's' : ''} left</span>
+          </span>
         </div>
       )}
 
       {!selectedDate && (
-        <p className="text-sm text-muted">Select an available date above to see time slots.</p>
+        <p className="text-sm text-muted">Select an available date above to continue.</p>
       )}
     </div>
   )

@@ -3,6 +3,14 @@ import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { createBooking } from '@/lib/bookings'
 
+const GuestDetailSchema = z.object({
+  firstName: z.string().min(1).max(100),
+  lastName: z.string().min(1).max(100),
+  email: z.string().email(),
+  heightFeet: z.number().int().min(3).max(7),
+  heightInches: z.number().int().min(0).max(11),
+})
+
 const CreateBookingSchema = z.object({
   slotId: z.string().min(1),
   guestCount: z.number().int().min(1).max(20),
@@ -12,6 +20,7 @@ const CreateBookingSchema = z.object({
   phone: z.string().min(7).max(20),
   specialRequests: z.string().max(500).optional(),
   promoCode: z.string().optional(),
+  guestsData: z.array(GuestDetailSchema).optional(),
 })
 
 export async function POST(req: NextRequest) {

@@ -74,6 +74,18 @@ export function AdminSidebar() {
           Tours
         </Link>
         <Link
+          href="/admin/about"
+          className={cn(
+            'flex items-center gap-3 px-6 py-3.5 text-sm transition-all duration-150 border-l-[3px]',
+            pathname.startsWith('/admin/about')
+              ? 'bg-gold/8 border-gold text-gold'
+              : 'border-transparent text-white/65 hover:bg-white/[0.03] hover:text-white'
+          )}
+        >
+          <span className="text-base w-5 text-center">👥</span>
+          About Page
+        </Link>
+        <Link
           href="/"
           target="_blank"
           className="flex items-center gap-3 px-6 py-3.5 text-sm text-white/65

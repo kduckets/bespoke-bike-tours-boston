@@ -20,6 +20,14 @@ export type BookingWithDetails = Booking & {
 
 // ─── API Payloads ─────────────────────────────────────────────────────────────
 
+export interface GuestDetail {
+  firstName: string
+  lastName: string
+  email: string
+  heightFeet: number
+  heightInches: number
+}
+
 export interface CreateBookingPayload {
   slotId: string
   guestCount: number
@@ -29,6 +37,7 @@ export interface CreateBookingPayload {
   phone: string
   specialRequests?: string
   promoCode?: string
+  guestsData?: GuestDetail[]
 }
 
 export interface BookingResult {

@@ -1,0 +1,37 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth'
+import { prisma } from '@/lib/prisma'
+import { revalidatePath } from 'next/cache'
+import { z } from 'zod'
+
+const schema = z.object({
+  initials:  z.string().min(1).max(4).optional(),
+  name:      z.string().min(1).optional(),
+  role:      z.string().min(1).optional(),
+  bio:       z.string().min(1).optional(),
+  photoUrl:  z.string().url().optional().nullable(),
+  color:     z.enum(['purple', 'gold', 'iris']).optional(),
+  isActive:  z.boolean().optional(),
+  sortOrder: z.number().int().optional(),
+})
+
+export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const session = await getServerSession(authOptions)
+  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const { id } = await params
+  const body = schema.safeParse(await req.json())
+  if (!body.success) return NextResponse.json({ error: body.error.flatten() }, { status: 400 })
+  const member = await prisma.teamMember.update({ where: { id }, data: body.data })
+  revalidatePath('/about')
+  return NextResponse.json(member)
+}
+
+export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const session = await getServerSession(authOptions)
+  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const { id } = await params
+  await prisma.teamMember.delete({ where: { id } })
+  revalidatePath('/about')
+  return NextResponse.json({ ok: true })
+}

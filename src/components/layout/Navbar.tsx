@@ -6,7 +6,6 @@ import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
 
 const links = [
-  { href: '/tours',   label: 'Tours' },
   { href: '/about',   label: 'About' },
   { href: '/contact', label: 'Contact' },
 ]

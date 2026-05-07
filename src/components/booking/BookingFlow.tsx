@@ -11,7 +11,7 @@ import {
 } from '@stripe/react-stripe-js'
 import { formatPrice } from '@/lib/utils'
 import { AvailabilityCalendar } from './AvailabilityCalendar'
-import type { AvailableSlot, PromoValidation } from '@/types'
+import type { AvailableSlot, PromoValidation, GuestDetail } from '@/types'
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!)
 
@@ -24,22 +24,10 @@ export interface TourData {
   groupBasePrice: number | null
 }
 
-type TourOption = { slug: string; name: string; detail: string; priceCents: number; basePrice?: number }
-
-function toOption(t: TourData): TourOption {
-  return {
-    slug: t.slug,
-    name: t.name,
-    detail: `${t.duration} · Up to ${t.maxCapacity} riders`,
-    priceCents: t.pricePerPerson,
-    ...(t.groupBasePrice != null ? { basePrice: t.groupBasePrice } : {}),
-  }
-}
-
 // ─── Step indicator ───────────────────────────────────────────────────────────
 
 function StepIndicator({ current }: { current: number }) {
-  const steps = ['Choose Tour', 'Date & Time', 'Your Info', 'Payment']
+  const steps = ['Date', 'Your Info', 'Payment']
   return (
     <div className="flex items-center mb-10">
       {steps.map((label, i) => {
@@ -57,7 +45,7 @@ function StepIndicator({ current }: { current: number }) {
               ].join(' ')}>
                 {isDone ? '✓' : num}
               </div>
-              <span className={['text-xs tracking-widest uppercase hidden sm:block', isActive ? 'text-gold' : 'text-muted'].join(' ')}>
+              <span className={['text-xs tracking-widests uppercase hidden sm:block', isActive ? 'text-gold' : 'text-muted'].join(' ')}>
                 {label}
               </span>
             </div>
@@ -69,35 +57,17 @@ function StepIndicator({ current }: { current: number }) {
   )
 }
 
-// ─── Step 1 ───────────────────────────────────────────────────────────────────
+// ─── Step 1 — Date ────────────────────────────────────────────────────────────
 
-function Step1TourSelect({ tours, selectedTour, guests, onSelectTour, onAdjustGuests, onNext }: {
-  tours: TourOption[]; selectedTour: string; guests: number
-  onSelectTour: (s: string) => void; onAdjustGuests: (d: number) => void; onNext: () => void
+function Step1Date({ tour, guests, selectedSlot, onAdjustGuests, onSelect, onNext }: {
+  tour: TourData; guests: number; selectedSlot: AvailableSlot | null
+  onAdjustGuests: (d: number) => void; onSelect: (s: AvailableSlot) => void; onNext: () => void
 }) {
   return (
     <div className="card p-5 sm:p-10">
-      <h3 className="font-display text-3xl tracking-wide mb-6">Select Your Experience</h3>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
-        {tours.map((tour) => {
-          const selected = selectedTour === tour.slug
-          return (
-            <button key={tour.slug} onClick={() => onSelectTour(tour.slug)}
-              className={['relative text-left border-2 rounded-lg p-5 transition-all duration-200',
-                selected ? 'border-gold bg-gold/[0.08]' : 'border-white/10 hover:border-iris hover:bg-iris/10'].join(' ')}>
-              {selected && (
-                <span className="absolute top-4 right-4 w-6 h-6 rounded-full bg-gold flex items-center justify-center text-navy text-xs font-bold">✓</span>
-              )}
-              <div className="font-bold text-base mb-1">{tour.name}</div>
-              <div className="text-xs text-muted mb-3">{tour.detail}</div>
-              <div className="text-2xl font-light">
-                {formatPrice(tour.priceCents)}
-                <small className="text-xs text-muted ml-1">per person</small>
-              </div>
-            </button>
-          )
-        })}
-      </div>
+      <h3 className="font-display text-3xl tracking-wide mb-2">Pick a Date</h3>
+      <p className="text-sm text-muted mb-6">All rides depart at 10 AM.</p>
+
       <div className="mb-8">
         <label className="block text-[11px] tracking-[2px] uppercase text-muted mb-3">Number of Guests</label>
         <div className="flex items-center gap-4">
@@ -107,27 +77,15 @@ function Step1TourSelect({ tours, selectedTour, guests, onSelectTour, onAdjustGu
           <button onClick={() => onAdjustGuests(1)} aria-label="Add guest"
             className="w-9 h-9 rounded-full border border-white/20 flex items-center justify-center text-lg hover:border-gold hover:text-gold transition-colors">+</button>
           <span className="text-sm text-muted">{guests === 1 ? 'guest' : 'guests'}</span>
+          <span className="text-sm text-gold ml-2">{formatPrice(tour.pricePerPerson * guests)} total</span>
         </div>
       </div>
-      <button onClick={onNext} className="btn-primary">Next: Choose Date →</button>
-    </div>
-  )
-}
 
-// ─── Step 2 ───────────────────────────────────────────────────────────────────
+      <AvailabilityCalendar tourSlug={tour.slug} selectedSlot={selectedSlot} onSelectSlot={onSelect} />
 
-function Step2DateTime({ tourSlug, selectedSlot, onSelect, onBack, onNext }: {
-  tourSlug: string; selectedSlot: AvailableSlot | null
-  onSelect: (s: AvailableSlot) => void; onBack: () => void; onNext: () => void
-}) {
-  return (
-    <div className="card p-5 sm:p-10">
-      <h3 className="font-display text-3xl tracking-wide mb-6">Pick a Date & Time</h3>
-      <AvailabilityCalendar tourSlug={tourSlug} selectedSlot={selectedSlot} onSelectSlot={onSelect} />
-      <div className="flex gap-3 mt-8">
-        <button onClick={onBack} className="btn-outline flex-1">← Back</button>
+      <div className="mt-8">
         <button onClick={onNext} disabled={!selectedSlot}
-          className="btn-primary flex-[2] disabled:opacity-40 disabled:cursor-not-allowed">
+          className="btn-primary disabled:opacity-40 disabled:cursor-not-allowed">
           Next: Your Info →
         </button>
       </div>
@@ -135,49 +93,93 @@ function Step2DateTime({ tourSlug, selectedSlot, onSelect, onBack, onNext }: {
   )
 }
 
-// ─── Step 3 ───────────────────────────────────────────────────────────────────
+// ─── Step 2 — Guest Info ──────────────────────────────────────────────────────
 
-interface GuestInfo { firstName: string; lastName: string; email: string; phone: string; specialRequests: string }
+function emptyGuest(): GuestDetail {
+  return { firstName: '', lastName: '', email: '', heightFeet: 5, heightInches: 6 }
+}
 
-function Step3GuestInfo({ info, onChange, loading, onBack, onNext }: {
-  info: GuestInfo; onChange: (i: GuestInfo) => void
-  loading: boolean; onBack: () => void; onNext: () => void
+function GuestForm({ index, guest, onChange }: {
+  index: number; guest: GuestDetail; onChange: (g: GuestDetail) => void
 }) {
-  const set = (field: keyof GuestInfo) =>
-    (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
-      onChange({ ...info, [field]: e.target.value })
+  const set = <K extends keyof GuestDetail>(key: K, value: GuestDetail[K]) =>
+    onChange({ ...guest, [key]: value })
 
-  const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(info.email)
-  const valid = info.firstName.trim() && info.lastName.trim() && emailValid && info.phone.trim().length >= 7
+  return (
+    <div className="border border-white/10 rounded-lg p-5 space-y-4">
+      <div className="text-[11px] tracking-[3px] uppercase text-gold">
+        {index === 0 ? 'Guest 1 (Primary)' : `Guest ${index + 1}`}
+      </div>
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label className="block text-[11px] tracking-[2px] uppercase text-muted mb-2">First Name</label>
+          <input className="field" type="text" placeholder="Jamie"
+            value={guest.firstName} onChange={e => set('firstName', e.target.value)} />
+        </div>
+        <div>
+          <label className="block text-[11px] tracking-[2px] uppercase text-muted mb-2">Last Name</label>
+          <input className="field" type="text" placeholder="Smith"
+            value={guest.lastName} onChange={e => set('lastName', e.target.value)} />
+        </div>
+      </div>
+      <div>
+        <label className="block text-[11px] tracking-[2px] uppercase text-muted mb-2">Email</label>
+        <input className="field" type="email" placeholder="jamie@email.com"
+          value={guest.email} onChange={e => set('email', e.target.value)} />
+      </div>
+      <div>
+        <label className="block text-[11px] tracking-[2px] uppercase text-muted mb-2">
+          Height <span className="normal-case text-muted/60">(for bike fitting)</span>
+        </label>
+        <div className="flex items-center gap-3">
+          <select className="field w-24"
+            value={guest.heightFeet}
+            onChange={e => set('heightFeet', Number(e.target.value))}>
+            {[4, 5, 6, 7].map(f => <option key={f} value={f}>{f} ft</option>)}
+          </select>
+          <select className="field w-24"
+            value={guest.heightInches}
+            onChange={e => set('heightInches', Number(e.target.value))}>
+            {Array.from({ length: 12 }, (_, i) => i).map(i => <option key={i} value={i}>{i} in</option>)}
+          </select>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function Step2GuestInfo({ guests, guestDetails, primaryPhone, specialRequests, loading,
+  onChangeGuest, onChangePhone, onChangeRequests, onBack, onNext }: {
+  guests: number; guestDetails: GuestDetail[]; primaryPhone: string; specialRequests: string
+  loading: boolean
+  onChangeGuest: (i: number, g: GuestDetail) => void
+  onChangePhone: (v: string) => void
+  onChangeRequests: (v: string) => void
+  onBack: () => void; onNext: () => void
+}) {
+  const allValid = guestDetails.every(g =>
+    g.firstName.trim() && g.lastName.trim() &&
+    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(g.email)
+  ) && primaryPhone.trim().length >= 7
 
   return (
     <div className="card p-5 sm:p-10">
-      <h3 className="font-display text-3xl tracking-wide mb-6">Your Details</h3>
-      <div className="grid gap-4">
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-[11px] tracking-[2px] uppercase text-muted mb-2">First Name</label>
-            <input className="field" type="text" autoComplete="given-name" placeholder="Jamie"
-              value={info.firstName} onChange={set('firstName')} />
-          </div>
-          <div>
-            <label className="block text-[11px] tracking-[2px] uppercase text-muted mb-2">Last Name</label>
-            <input className="field" type="text" autoComplete="family-name" placeholder="Smith"
-              value={info.lastName} onChange={set('lastName')} />
-          </div>
-        </div>
+      <h3 className="font-display text-3xl tracking-wide mb-2">Your Details</h3>
+      <p className="text-sm text-muted mb-6">We need info for each guest to fit bikes correctly.</p>
+
+      <div className="space-y-4">
+        {guestDetails.map((g, i) => (
+          <GuestForm key={i} index={i} guest={g} onChange={(upd) => onChangeGuest(i, upd)} />
+        ))}
+      </div>
+
+      <div className="mt-4 space-y-4">
         <div>
-          <label className="block text-[11px] tracking-[2px] uppercase text-muted mb-2">Email</label>
-          <input className="field" type="email" autoComplete="email" placeholder="jamie@email.com"
-            value={info.email} onChange={set('email')} />
-          {info.email && !emailValid && (
-            <p className="text-red-400 text-xs mt-1">Please enter a valid email address.</p>
-          )}
-        </div>
-        <div>
-          <label className="block text-[11px] tracking-[2px] uppercase text-muted mb-2">Phone</label>
+          <label className="block text-[11px] tracking-[2px] uppercase text-muted mb-2">
+            Phone <span className="normal-case text-muted/60">(primary contact)</span>
+          </label>
           <input className="field" type="tel" autoComplete="tel" placeholder="(617) 555-0100"
-            value={info.phone} onChange={set('phone')} />
+            value={primaryPhone} onChange={e => onChangePhone(e.target.value)} />
         </div>
         <div>
           <label className="block text-[11px] tracking-[2px] uppercase text-muted mb-2">
@@ -185,12 +187,13 @@ function Step3GuestInfo({ info, onChange, loading, onBack, onNext }: {
           </label>
           <textarea className="field" rows={3}
             placeholder="Celebrating a birthday? Accessibility needs? Let us know…"
-            value={info.specialRequests} onChange={set('specialRequests')} />
+            value={specialRequests} onChange={e => onChangeRequests(e.target.value)} />
         </div>
       </div>
+
       <div className="flex gap-3 mt-6">
         <button onClick={onBack} className="btn-outline flex-1">← Back</button>
-        <button onClick={onNext} disabled={!valid || loading}
+        <button onClick={onNext} disabled={!allValid || loading}
           className="btn-primary flex-[2] disabled:opacity-40 disabled:cursor-not-allowed">
           {loading ? (
             <span className="flex items-center justify-center gap-2">
@@ -204,7 +207,7 @@ function Step3GuestInfo({ info, onChange, loading, onBack, onNext }: {
   )
 }
 
-// ─── Step 4 — Payment form (inside <Elements>) ────────────────────────────────
+// ─── Step 3 — Payment ─────────────────────────────────────────────────────────
 
 function PaymentForm({ totalCents, subtotalCents, guests, tourName, bookingReference,
   promoValidation, promoCode, onPromoCodeChange, onApplyPromo, onBack, onSuccess }: {
@@ -227,10 +230,8 @@ function PaymentForm({ totalCents, subtotalCents, guests, tourName, bookingRefer
     const { error: stripeError, paymentIntent } = await stripe.confirmPayment({
       elements,
       confirmParams: {
-        // Required for redirect payment methods (iDEAL, BACS, Bancontact, etc.)
         return_url: `${window.location.origin}/book/confirmation/${bookingReference}`,
       },
-      // Card / Apple Pay / Google Pay: complete in-page, no redirect needed
       redirect: 'if_required',
     })
 
@@ -241,7 +242,7 @@ function PaymentForm({ totalCents, subtotalCents, guests, tourName, bookingRefer
     }
 
     if (paymentIntent?.status === 'succeeded') onSuccess()
-    else setLoading(false) // redirect-based: Stripe handles navigation
+    else setLoading(false)
   }
 
   async function handleApplyPromo() {
@@ -256,7 +257,6 @@ function PaymentForm({ totalCents, subtotalCents, guests, tourName, bookingRefer
     <div className="card p-5 sm:p-10">
       <h3 className="font-display text-3xl tracking-wide mb-6">Payment</h3>
 
-      {/* Order summary */}
       <div className="bg-gold/5 border border-gold/20 rounded-lg p-6 mb-6">
         <div className="text-[11px] tracking-[2px] uppercase text-gold mb-4">Order Summary</div>
         <div className="text-sm space-y-0">
@@ -276,7 +276,6 @@ function PaymentForm({ totalCents, subtotalCents, guests, tourName, bookingRefer
           </div>
         </div>
 
-        {/* Promo entry */}
         <div className="flex gap-2 mt-5">
           <input
             className="field flex-1 py-2.5 text-sm"
@@ -301,7 +300,6 @@ function PaymentForm({ totalCents, subtotalCents, guests, tourName, bookingRefer
         )}
       </div>
 
-      {/* Stripe Elements */}
       <div className="mb-6">
         <PaymentElement options={{ layout: 'tabs' }} />
       </div>
@@ -341,7 +339,7 @@ function ConfirmationRedirect({ reference }: { reference: string }) {
   return (
     <div className="card p-10 text-center">
       <div className="w-16 h-16 rounded-full bg-green-500/15 border-2 border-green-400 flex items-center justify-center mx-auto mb-4 text-2xl">✓</div>
-      <p className="text-muted text-sm animate-pulse tracking-widest uppercase">Booking confirmed — redirecting…</p>
+      <p className="text-muted text-sm animate-pulse tracking-widests uppercase">Booking confirmed — redirecting…</p>
     </div>
   )
 }
@@ -350,16 +348,18 @@ function ConfirmationRedirect({ reference }: { reference: string }) {
 
 export function BookingFlow({ tours: rawTours }: { tours: TourData[] }) {
   const searchParams = useSearchParams()
-  const tours = rawTours.map(toOption)
+  const tour = rawTours[0]  // single active tour
 
-  const initialTour   = searchParams.get('tour') ?? tours[0]?.slug ?? ''
   const initialGuests = Math.max(1, Number(searchParams.get('guests') ?? 2))
 
   const [step, setStep]                   = useState(1)
-  const [selectedTour, setSelectedTour]   = useState(initialTour)
   const [guests, setGuests]               = useState(initialGuests)
   const [selectedSlot, setSelectedSlot]   = useState<AvailableSlot | null>(null)
-  const [guestInfo, setGuestInfo]         = useState<GuestInfo>({ firstName: '', lastName: '', email: '', phone: '', specialRequests: '' })
+  const [guestDetails, setGuestDetails]   = useState<GuestDetail[]>(
+    Array.from({ length: initialGuests }, emptyGuest)
+  )
+  const [primaryPhone, setPrimaryPhone]   = useState('')
+  const [specialRequests, setSpecialRequests] = useState('')
   const [clientSecret, setClientSecret]   = useState<string | null>(null)
   const [bookingRef, setBookingRef]       = useState<string | null>(null)
   const [totalCents, setTotalCents]       = useState(0)
@@ -370,22 +370,40 @@ export function BookingFlow({ tours: rawTours }: { tours: TourData[] }) {
   const [creatingBooking, setCreatingBooking] = useState(false)
   const [confirmed, setConfirmed]         = useState(false)
 
-  const tourObj = tours.find((t) => t.slug === selectedTour) ?? tours[0]
+  function handleAdjustGuests(delta: number) {
+    const next = Math.max(1, Math.min(20, guests + delta))
+    setGuests(next)
+    setGuestDetails(prev => {
+      if (next > prev.length) {
+        return [...prev, ...Array.from({ length: next - prev.length }, emptyGuest)]
+      }
+      return prev.slice(0, next)
+    })
+  }
+
+  function handleChangeGuest(i: number, g: GuestDetail) {
+    setGuestDetails(prev => prev.map((old, idx) => idx === i ? g : old))
+  }
 
   async function handleCreateBooking() {
-    if (!selectedSlot) return
+    if (!selectedSlot || !tour) return
     setCreatingBooking(true)
     setGlobalError(null)
     try {
+      const primary = guestDetails[0]
       const res = await fetch('/api/bookings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          slotId: selectedSlot.id, guestCount: guests,
-          firstName: guestInfo.firstName, lastName: guestInfo.lastName,
-          email: guestInfo.email, phone: guestInfo.phone,
-          specialRequests: guestInfo.specialRequests || undefined,
+          slotId: selectedSlot.id,
+          guestCount: guests,
+          firstName: primary.firstName,
+          lastName: primary.lastName,
+          email: primary.email,
+          phone: primaryPhone,
+          specialRequests: specialRequests || undefined,
           promoCode: promoCode || undefined,
+          guestsData: guestDetails,
         }),
       })
       if (!res.ok) {
@@ -396,8 +414,8 @@ export function BookingFlow({ tours: rawTours }: { tours: TourData[] }) {
       setClientSecret(data.clientSecret)
       setBookingRef(data.reference)
       setTotalCents(data.totalCents)
-      setSubtotalCents(tourObj.priceCents * guests)
-      setStep(4)
+      setSubtotalCents(tour.pricePerPerson * guests)
+      setStep(3)
     } catch (err: unknown) {
       setGlobalError(err instanceof Error ? err.message : 'Something went wrong.')
     } finally {
@@ -406,8 +424,8 @@ export function BookingFlow({ tours: rawTours }: { tours: TourData[] }) {
   }
 
   async function handleApplyPromo() {
-    if (!promoCode) return
-    const subtotal = tourObj.priceCents * guests
+    if (!promoCode || !tour) return
+    const subtotal = tour.pricePerPerson * guests
     try {
       const res = await fetch('/api/bookings/validate-promo', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -419,6 +437,14 @@ export function BookingFlow({ tours: rawTours }: { tours: TourData[] }) {
     } catch {
       setPromoValidation({ valid: false, error: 'Could not validate code.' })
     }
+  }
+
+  if (!tour) {
+    return (
+      <div className="card p-10 text-center text-muted text-sm">
+        No tours currently available. Check back soon!
+      </div>
+    )
   }
 
   if (confirmed && bookingRef) return <ConfirmationRedirect reference={bookingRef} />
@@ -435,25 +461,25 @@ export function BookingFlow({ tours: rawTours }: { tours: TourData[] }) {
       )}
 
       {step === 1 && (
-        <Step1TourSelect tours={tours} selectedTour={selectedTour} guests={guests}
-          onSelectTour={setSelectedTour}
-          onAdjustGuests={(d) => setGuests((g) => Math.max(1, Math.min(20, g + d)))}
+        <Step1Date
+          tour={tour} guests={guests} selectedSlot={selectedSlot}
+          onAdjustGuests={handleAdjustGuests}
+          onSelect={setSelectedSlot}
           onNext={() => setStep(2)} />
       )}
 
       {step === 2 && (
-        <Step2DateTime tourSlug={selectedTour} selectedSlot={selectedSlot}
-          onSelect={(slot) => { setSelectedSlot(slot) }}
-          onBack={() => setStep(1)} onNext={() => setStep(3)} />
-      )}
-
-      {step === 3 && (
-        <Step3GuestInfo info={guestInfo} onChange={setGuestInfo}
+        <Step2GuestInfo
+          guests={guests} guestDetails={guestDetails}
+          primaryPhone={primaryPhone} specialRequests={specialRequests}
           loading={creatingBooking}
-          onBack={() => setStep(2)} onNext={handleCreateBooking} />
+          onChangeGuest={handleChangeGuest}
+          onChangePhone={setPrimaryPhone}
+          onChangeRequests={setSpecialRequests}
+          onBack={() => setStep(1)} onNext={handleCreateBooking} />
       )}
 
-      {step === 4 && clientSecret && bookingRef && (
+      {step === 3 && clientSecret && bookingRef && (
         <Elements stripe={stripePromise} options={{
           clientSecret,
           appearance: {
@@ -467,11 +493,11 @@ export function BookingFlow({ tours: rawTours }: { tours: TourData[] }) {
         }}>
           <PaymentForm
             totalCents={totalCents} subtotalCents={subtotalCents}
-            guests={guests} tourName={tourObj.name} bookingReference={bookingRef}
+            guests={guests} tourName={tour.name} bookingReference={bookingRef}
             promoValidation={promoValidation} promoCode={promoCode}
             onPromoCodeChange={(c) => { setPromoCode(c); setPromoValidation(null) }}
             onApplyPromo={handleApplyPromo}
-            onBack={() => setStep(3)}
+            onBack={() => setStep(2)}
             onSuccess={() => setConfirmed(true)} />
         </Elements>
       )}

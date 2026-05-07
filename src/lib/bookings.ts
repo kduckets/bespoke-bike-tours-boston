@@ -129,6 +129,7 @@ export async function createBooking(payload: CreateBookingPayload): Promise<Book
         totalCents,
         status: BookingStatus.PENDING,
         stripePaymentIntentId: paymentIntent.id,
+        guestsData: payload.guestsData ? JSON.stringify(payload.guestsData) : undefined,
       },
     })
 

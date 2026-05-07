@@ -5,47 +5,23 @@ import { HeroParticles } from '@/components/ui/HeroParticles'
 import { InlineBookingWidgetClient as InlineBookingWidget } from '@/components/booking/InlineBookingWidgetClient'
 import { getSiteContent } from '@/lib/site-content'
 import { prisma } from '@/lib/prisma'
+import { formatPrice } from '@/lib/utils'
 
 export const revalidate = 60
 
-const FALLBACK_TESTIMONIALS = [
-  {
-    id: 'f1',
-    quote: 'This was the absolute highlight of our Boston trip. Our guide knew every hidden alley and had the playlist to match. We\'ve already booked again for our anniversary.',
-    author: 'Sarah M.',
-    location: 'New York, NY',
-    rating: 5,
-  },
-  {
-    id: 'f2',
-    quote: 'Did the bachelorette package and WOW. They set up champagne stops, had playlist requests, and the route was stunning. Everyone is still talking about it.',
-    author: 'Jess R.',
-    location: 'Chicago, IL',
-    rating: 5,
-  },
-  {
-    id: 'f3',
-    quote: 'I hadn\'t ridden a bike in 20 years. The lesson was patient, fun, and completely non-judgmental. By the end I was ready to join the main tour.',
-    author: 'Tom K.',
-    location: 'Boston, MA',
-    rating: 5,
-  },
-]
-
 export default async function HomePage() {
-  const [hero, dbTestimonials] = await Promise.all([
+  const [hero, testimonials, tour, faqs] = await Promise.all([
     getSiteContent(['hero_tagline', 'hero_line1', 'hero_line2', 'hero_line3', 'hero_subheadline', 'hero_image_url']),
     prisma.testimonial.findMany({ where: { isActive: true }, orderBy: { sortOrder: 'asc' } }).catch(() => []),
+    prisma.tour.findFirst({ where: { isActive: true }, orderBy: { createdAt: 'asc' } }).catch(() => null),
+    (async () => { try { return await prisma.faq.findMany({ where: { isActive: true }, orderBy: { sortOrder: 'asc' } }) } catch { return [] } })(),
   ])
-
-  const testimonials = dbTestimonials.length > 0 ? dbTestimonials : FALLBACK_TESTIMONIALS
 
   return (
     <>
       {/* ── Hero ─────────────────────────────────────────────────────────── */}
       <section className="relative h-screen min-h-[600px] flex items-center justify-center
                           overflow-hidden bg-navy -mt-[70px]">
-        {/* Hero background image (if set) */}
         {hero.hero_image_url && (
           // eslint-disable-next-line @next/next/no-img-element
           <img
@@ -56,7 +32,6 @@ export default async function HomePage() {
           />
         )}
 
-        {/* Background glow */}
         <div className="absolute inset-0 pointer-events-none">
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_60%_40%,rgba(74,45,176,0.5)_0%,transparent_60%)]" />
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_20%_80%,rgba(61,45,181,0.3)_0%,transparent_50%)]" />
@@ -80,13 +55,9 @@ export default async function HomePage() {
             {hero.hero_subheadline}
           </p>
 
-          <div className="flex gap-4 justify-center flex-wrap">
-            <Link href="/book" className="btn-primary">Book Your Ride ✦</Link>
-            <Link href="/tours" className="btn-outline">See All Tours</Link>
-          </div>
+          <Link href="/book" className="btn-primary">Book Your Ride ✦</Link>
         </div>
 
-        {/* Scroll indicator */}
         <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col
                         items-center gap-2 text-white/40 text-[11px] tracking-[2px] uppercase">
           <div className="w-px h-10 bg-gradient-to-b from-gold/60 to-transparent"
@@ -95,6 +66,38 @@ export default async function HomePage() {
         </div>
       </section>
 
+      {/* ── Tour Description Tile ─────────────────────────────────────────── */}
+      {tour && (
+        <section className="bg-navy-2 border-y border-gold/15">
+          <div className="max-w-5xl mx-auto px-10 py-16 flex flex-col md:flex-row items-center gap-10">
+            <div className="flex-1">
+              <div className="section-label">The Experience</div>
+              <h2 className="font-display text-4xl tracking-wide mb-4">{tour.name.toUpperCase()}</h2>
+              <p className="text-muted leading-relaxed mb-6">{tour.description}</p>
+              <div className="flex flex-wrap gap-6 text-sm">
+                <div className="flex items-center gap-2">
+                  <span className="text-gold">⏱</span>
+                  <span className="text-white/70">{tour.duration}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-gold">👥</span>
+                  <span className="text-white/70">Up to {tour.maxCapacity} riders</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-gold">✦</span>
+                  <span className="text-white/70">{formatPrice(tour.pricePerPerson)} per person</span>
+                </div>
+              </div>
+            </div>
+            <div className="shrink-0">
+              <Link href="/book" className="btn-primary text-base px-8 py-4">
+                Book Now ✦
+              </Link>
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* ── Inline booking widget ─────────────────────────────────────────── */}
       <section className="py-20 px-10 max-w-4xl mx-auto">
         <div className="section-label">Reserve Your Spot</div>
@@ -102,26 +105,45 @@ export default async function HomePage() {
         <InlineBookingWidget />
       </section>
 
-      <div className="gold-divider mx-10" />
+      {testimonials.length > 0 && (
+        <>
+          <div className="gold-divider mx-10" />
 
-      {/* ── Testimonials ──────────────────────────────────────────────────── */}
-      <section className="bg-navy-2 py-20 px-10 text-center">
-        <div className="section-label">Reviews</div>
-        <h2 className="section-title mb-2">WHAT RIDERS SAY</h2>
-        <p className="text-sm text-muted mb-12">★★★★★ 4.9 average across 200+ reviews</p>
+          {/* ── Testimonials ────────────────────────────────────────────────── */}
+          <section className="bg-navy-2 py-20 px-10 text-center">
+            <div className="section-label">Reviews</div>
+            <h2 className="section-title mb-2">WHAT RIDERS SAY</h2>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
-          {testimonials.map((t) => (
-            <div key={t.id} className="card p-8 text-left">
-              <div className="text-gold text-sm mb-4">{'★'.repeat(t.rating)}</div>
-              <p className="text-sm text-white/80 leading-relaxed italic mb-5">"{t.quote}"</p>
-              <div className="text-[11px] font-semibold tracking-widest uppercase text-iris-2">
-                {t.author} — {t.location}
-              </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+              {testimonials.map((t: { id: string; quote: string; author: string; location: string; rating: number }) => (
+                <div key={t.id} className="card p-8 text-left">
+                  <div className="text-gold text-sm mb-4">{'★'.repeat(t.rating)}</div>
+                  <p className="text-sm text-white/80 leading-relaxed italic mb-5">&ldquo;{t.quote}&rdquo;</p>
+                  <div className="text-[11px] font-semibold tracking-widest uppercase text-iris-2">
+                    {t.author} — {t.location}
+                  </div>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
-      </section>
+          </section>
+        </>
+      )}
+
+      {/* ── FAQ ───────────────────────────────────────────────────────────── */}
+      {faqs.length > 0 && (
+        <section className="py-20 px-10 max-w-3xl mx-auto">
+          <div className="section-label">FAQ</div>
+          <h2 className="section-title mb-12">COMMON QUESTIONS</h2>
+          <div className="space-y-0">
+            {faqs.map((faq: { id: string; question: string; answer: string }, i: number) => (
+              <div key={faq.id} className={`border-t border-white/[0.08] py-6 ${i === faqs.length - 1 ? 'border-b' : ''}`}>
+                <div className="font-semibold text-base mb-2">{faq.question}</div>
+                <p className="text-sm text-muted leading-relaxed">{faq.answer}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       <Footer />
     </>

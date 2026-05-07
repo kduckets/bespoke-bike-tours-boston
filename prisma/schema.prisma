@@ -67,6 +67,7 @@ model Booking {
   status          BookingStatus @default(PENDING)
   stripePaymentIntentId String? @unique
   stripeChargeId  String?
+  guestsData      String? @db.Text  // JSON array of per-guest info
   notes           String?       // internal admin notes
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
@@ -144,6 +145,44 @@ model SiteContent {
   id        String   @id @default(cuid())
   key       String   @unique
   value     String   @db.Text
+  updatedAt DateTime @updatedAt
+}
+
+// ─── CMS: About Page ─────────────────────────────────────────────────────────
+
+model TeamMember {
+  id        String   @id @default(cuid())
+  initials  String
+  name      String
+  role      String
+  bio       String   @db.Text
+  photoUrl  String?
+  color     String   @default("purple") // "purple" | "gold" | "iris"
+  isActive  Boolean  @default(true)
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model AboutValue {
+  id        String   @id @default(cuid())
+  title     String
+  desc      String   @db.Text
+  isActive  Boolean  @default(true)
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// ─── CMS: FAQs ────────────────────────────────────────────────────────────────
+
+model Faq {
+  id        String   @id @default(cuid())
+  question  String
+  answer    String   @db.Text
+  isActive  Boolean  @default(true)
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
