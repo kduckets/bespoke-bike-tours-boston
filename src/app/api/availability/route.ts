@@ -48,5 +48,7 @@ export async function GET(req: NextRequest) {
     slots,
   }))
 
-  return NextResponse.json(result)
+  return NextResponse.json(result, {
+    headers: { 'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300' },
+  })
 }

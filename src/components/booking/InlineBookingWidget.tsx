@@ -97,7 +97,10 @@ export function InlineBookingWidget() {
             </button>
 
             {calendarOpen && (
-              <div className="absolute top-[calc(100%+6px)] left-0 z-50 bg-[var(--navy-2)] border border-white/15 rounded-xl shadow-2xl p-3">
+              <div className="
+                mt-1 bg-[var(--navy-2)] border border-white/15 rounded-xl p-3
+                sm:absolute sm:mt-0 sm:top-[calc(100%+6px)] sm:left-0 sm:z-50 sm:shadow-2xl
+              ">
                 <DayPicker
                   mode="single"
                   selected={selectedDate}
