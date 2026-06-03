@@ -97,24 +97,43 @@ export function InlineBookingWidget() {
             </button>
 
             {calendarOpen && (
-              <div className="
-                mt-1 bg-[var(--navy-2)] border border-white/15 rounded-xl p-3
-                sm:absolute sm:mt-0 sm:top-[calc(100%+6px)] sm:left-0 sm:z-50 sm:shadow-2xl
-              ">
-                <DayPicker
-                  mode="single"
-                  selected={selectedDate}
-                  onDayClick={handleDayClick}
-                  disabled={[
-                    { before: today },
-                    (date) => !availability.some((a) => a.date === format(date, 'yyyy-MM-dd')),
-                  ]}
-                  modifiers={{ available: availableDates }}
-                  modifiersClassNames={{ available: 'available' }}
-                  fromMonth={today}
-                  toMonth={new Date(today.getFullYear(), today.getMonth() + 3)}
-                />
-              </div>
+              <>
+                {/* Mobile: fixed centered overlay */}
+                <div className="sm:hidden fixed inset-0 z-50 flex items-center justify-center px-4">
+                  <div className="absolute inset-0 bg-black/60" onClick={() => setCalendarOpen(false)} />
+                  <div className="relative bg-[var(--navy-2)] border border-white/15 rounded-xl shadow-2xl p-4 w-full max-w-sm">
+                    <DayPicker
+                      mode="single"
+                      selected={selectedDate}
+                      onDayClick={handleDayClick}
+                      disabled={[
+                        { before: today },
+                        (date) => !availability.some((a) => a.date === format(date, 'yyyy-MM-dd')),
+                      ]}
+                      modifiers={{ available: availableDates }}
+                      modifiersClassNames={{ available: 'available' }}
+                      fromMonth={today}
+                      toMonth={new Date(today.getFullYear(), today.getMonth() + 3)}
+                    />
+                  </div>
+                </div>
+                {/* Desktop: absolute dropdown */}
+                <div className="hidden sm:block absolute top-[calc(100%+6px)] left-0 z-50 bg-[var(--navy-2)] border border-white/15 rounded-xl shadow-2xl p-3">
+                  <DayPicker
+                    mode="single"
+                    selected={selectedDate}
+                    onDayClick={handleDayClick}
+                    disabled={[
+                      { before: today },
+                      (date) => !availability.some((a) => a.date === format(date, 'yyyy-MM-dd')),
+                    ]}
+                    modifiers={{ available: availableDates }}
+                    modifiersClassNames={{ available: 'available' }}
+                    fromMonth={today}
+                    toMonth={new Date(today.getFullYear(), today.getMonth() + 3)}
+                  />
+                </div>
+              </>
             )}
           </div>
 
