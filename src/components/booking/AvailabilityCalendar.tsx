@@ -17,6 +17,7 @@ interface Props {
 export function AvailabilityCalendar({ tourSlug, onSelectSlot, selectedSlot, initialDate }: Props) {
   const [availability, setAvailability] = useState<AvailabilityDay[]>([])
   const [selectedDate, setSelectedDate] = useState<Date | undefined>()
+  const [month, setMonth] = useState<Date>(startOfDay(new Date()))
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -30,7 +31,9 @@ export function AvailabilityCalendar({ tourSlug, onSelectSlot, selectedSlot, ini
         if (target) {
           const dayData = data.find((a) => a.date === target)
           if (dayData) {
-            setSelectedDate(parseISO(target))
+            const parsed = parseISO(target)
+            setSelectedDate(parsed)
+            setMonth(parsed)
             const preferred = dayData.slots.find((s) => s.startTime === '10:00')
             const slot = preferred ?? dayData.slots[0]
             if (slot) onSelectSlot(slot)
@@ -50,6 +53,7 @@ export function AvailabilityCalendar({ tourSlug, onSelectSlot, selectedSlot, ini
     if (!dayData || isBefore(day, today)) return
 
     setSelectedDate(day)
+    setMonth(day)
 
     // Auto-select 10am slot, or fall back to first available slot
     const preferred = dayData.slots.find((s) => s.startTime === '10:00')
@@ -70,6 +74,8 @@ export function AvailabilityCalendar({ tourSlug, onSelectSlot, selectedSlot, ini
       <DayPicker
         mode="single"
         selected={selectedDate}
+        month={month}
+        onMonthChange={setMonth}
         onDayClick={handleDayClick}
         disabled={[
           { before: today },
