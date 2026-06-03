@@ -59,8 +59,8 @@ function StepIndicator({ current }: { current: number }) {
 
 // ─── Step 1 — Date ────────────────────────────────────────────────────────────
 
-function Step1Date({ tour, guests, selectedSlot, onAdjustGuests, onSelect, onNext }: {
-  tour: TourData; guests: number; selectedSlot: AvailableSlot | null
+function Step1Date({ tour, guests, selectedSlot, initialDate, onAdjustGuests, onSelect, onNext }: {
+  tour: TourData; guests: number; selectedSlot: AvailableSlot | null; initialDate?: string
   onAdjustGuests: (d: number) => void; onSelect: (s: AvailableSlot) => void; onNext: () => void
 }) {
   return (
@@ -81,7 +81,7 @@ function Step1Date({ tour, guests, selectedSlot, onAdjustGuests, onSelect, onNex
         </div>
       </div>
 
-      <AvailabilityCalendar tourSlug={tour.slug} selectedSlot={selectedSlot} onSelectSlot={onSelect} />
+      <AvailabilityCalendar tourSlug={tour.slug} selectedSlot={selectedSlot} onSelectSlot={onSelect} initialDate={initialDate} />
 
       <div className="mt-8">
         <button onClick={onNext} disabled={!selectedSlot}
@@ -351,6 +351,7 @@ export function BookingFlow({ tours: rawTours }: { tours: TourData[] }) {
   const tour = rawTours[0]  // single active tour
 
   const initialGuests = Math.max(1, Number(searchParams.get('guests') ?? 2))
+  const initialDate = searchParams.get('date') ?? undefined
 
   const [step, setStep]                   = useState(1)
   const [guests, setGuests]               = useState(initialGuests)
@@ -463,6 +464,7 @@ export function BookingFlow({ tours: rawTours }: { tours: TourData[] }) {
       {step === 1 && (
         <Step1Date
           tour={tour} guests={guests} selectedSlot={selectedSlot}
+          initialDate={initialDate}
           onAdjustGuests={handleAdjustGuests}
           onSelect={setSelectedSlot}
           onNext={() => setStep(2)} />

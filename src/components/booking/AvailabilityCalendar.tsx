@@ -11,9 +11,10 @@ interface Props {
   tourSlug: string
   onSelectSlot: (slot: AvailableSlot) => void
   selectedSlot: AvailableSlot | null
+  initialDate?: string // yyyy-MM-dd
 }
 
-export function AvailabilityCalendar({ tourSlug, onSelectSlot, selectedSlot }: Props) {
+export function AvailabilityCalendar({ tourSlug, onSelectSlot, selectedSlot, initialDate }: Props) {
   const [availability, setAvailability] = useState<AvailabilityDay[]>([])
   const [selectedDate, setSelectedDate] = useState<Date | undefined>()
   const [loading, setLoading] = useState(true)
@@ -22,7 +23,20 @@ export function AvailabilityCalendar({ tourSlug, onSelectSlot, selectedSlot }: P
     setLoading(true)
     fetch(`/api/availability?tour=${tourSlug}&days=60`)
       .then((r) => r.json())
-      .then((data: AvailabilityDay[]) => setAvailability(data))
+      .then((data: AvailabilityDay[]) => {
+        setAvailability(data)
+        // Pre-select the date from the homepage widget if it's available
+        const target = initialDate ?? data[0]?.date
+        if (target) {
+          const dayData = data.find((a) => a.date === target)
+          if (dayData) {
+            setSelectedDate(parseISO(target))
+            const preferred = dayData.slots.find((s) => s.startTime === '10:00')
+            const slot = preferred ?? dayData.slots[0]
+            if (slot) onSelectSlot(slot)
+          }
+        }
+      })
       .catch(() => {})
       .finally(() => setLoading(false))
   }, [tourSlug])
