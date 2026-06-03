@@ -26,9 +26,10 @@ async function getBooking(reference: string): Promise<BookingData | null> {
 export default async function ConfirmationPage({
   params,
 }: {
-  params: { reference: string }
+  params: Promise<{ reference: string }>
 }) {
-  const booking = await getBooking(params.reference)
+  const { reference } = await params
+  const booking = await getBooking(reference)
   if (!booking) notFound()
 
   const WHAT_TO_BRING = [
