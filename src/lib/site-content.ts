@@ -7,7 +7,7 @@ export const SITE_CONTENT_DEFAULTS: Record<string, string> = {
   hero_line3:       'IN STYLE',
   hero_subheadline: 'Guided rides. Iconic sights. Unforgettable night out.',
   hero_image_url:   '',
-  contact_email:    'hello@bespokebikeboston.com',
+  contact_email:    'bespokebiketoursboston@gmail.com',
   contact_phone:    '(617) 555-0190',
   contact_location: 'The Esplanade, Hatch Shell',
   contact_hours:    'Daily 9 AM – 7 PM',

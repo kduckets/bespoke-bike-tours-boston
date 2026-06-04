@@ -92,8 +92,8 @@ export default async function ConfirmationPage({
           <div className="bg-gold/5 border border-gold/20 rounded-lg p-5 text-left mb-6">
             <div className="text-[11px] tracking-[2px] uppercase text-gold mb-3">Meet Up</div>
             <p className="text-sm text-white/80 leading-relaxed">
-              The Esplanade near the Hatch Shell<br />
-              100 Embankment Rd, Boston, MA 02114<br /><br />
+              The Rose Kennedy Rose Garden<br />
+              Atlantic Avenue, North End, Boston<br /><br />
               Please arrive <strong>10 minutes early</strong>.
             </p>
           </div>
@@ -129,9 +129,9 @@ export default async function ConfirmationPage({
         {/* Cancellation policy */}
         <div className="text-center text-xs text-muted leading-relaxed">
           Need to cancel or modify?{' '}
-          <a href="mailto:hello@bespokebikeboston.com"
+          <a href="mailto:bespokebiketoursboston@gmail.com"
              className="text-gold hover:underline">
-            hello@bespokebikeboston.com
+            bespokebiketoursboston@gmail.com
           </a>{' '}
           at least 48 hours before your ride for a full refund.
         </div>

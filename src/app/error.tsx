@@ -23,8 +23,8 @@ export default function GlobalError({
         <p className="text-muted text-sm max-w-sm mx-auto mb-8 leading-relaxed">
           We hit an unexpected snag. Try refreshing — if it keeps happening,
           shoot us an email at{' '}
-          <a href="mailto:hello@bespokebikeboston.com" className="text-gold hover:underline">
-            hello@bespokebikeboston.com
+          <a href="mailto:bespokebiketoursboston@gmail.com" className="text-gold hover:underline">
+            bespokebiketoursboston@gmail.com
           </a>
         </p>
         <div className="flex gap-3 justify-center">

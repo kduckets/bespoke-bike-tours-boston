@@ -35,8 +35,8 @@ export function Footer() {
           {/* Contact */}
           <div>
             <div className="section-label">Contact</div>
-            <a href="mailto:hello@bespokebikeboston.com" className="block text-sm text-muted mb-2.5 hover:text-white transition-colors">
-              hello@bespokebikeboston.com
+            <a href="mailto:bespokebiketoursboston@gmail.com" className="block text-sm text-muted mb-2.5 hover:text-white transition-colors">
+              bespokebiketoursboston@gmail.com
             </a>
             <a href="tel:6175550190" className="block text-sm text-muted mb-2.5 hover:text-white transition-colors">
               (617) 555-0190

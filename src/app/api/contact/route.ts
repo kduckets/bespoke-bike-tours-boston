@@ -18,8 +18,8 @@ export async function POST(req: NextRequest) {
     const { name, email, subject, message } = ContactSchema.parse(body)
 
     await resend.emails.send({
-      from:    process.env.EMAIL_FROM ?? 'hello@bespokebikeboston.com',
-      to:      'hello@bespokebikeboston.com',
+      from:    process.env.EMAIL_FROM ?? 'bespokebiketoursboston@gmail.com',
+      to:      'bespokebiketoursboston@gmail.com',
       reply_to: email,
       subject: `[Contact] ${subject} — ${name}`,
       html: `
@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
 
     // Auto-reply to sender
     await resend.emails.send({
-      from:    process.env.EMAIL_FROM ?? 'hello@bespokebikeboston.com',
+      from:    process.env.EMAIL_FROM ?? 'bespokebiketoursboston@gmail.com',
       to:      email,
       subject: 'We got your message — Bespoke Bike Tours Boston',
       html: `

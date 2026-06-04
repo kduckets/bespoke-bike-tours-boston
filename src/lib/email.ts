@@ -5,7 +5,7 @@ import { formatCents } from './stripe'
 import type { BookingWithDetails } from '@/types'
 
 const resend = new Resend(process.env.RESEND_API_KEY ?? 're_placeholder')
-const FROM = process.env.EMAIL_FROM ?? 'hello@bespokebikeboston.com'
+const FROM = process.env.EMAIL_FROM ?? 'bespokebiketoursboston@gmail.com'
 
 // ─── Booking Confirmation ──────────────────────────────────────────────────────
 
@@ -78,12 +78,12 @@ function confirmationEmailHtml(data: {
 
       <div style="background:rgba(245,200,66,0.08);border:1px solid rgba(245,200,66,0.3);border-radius:8px;padding:24px;margin-bottom:32px;">
         <div style="font-size:11px;letter-spacing:2px;color:#F5C842;margin-bottom:12px;text-transform:uppercase;">Meet Up</div>
-        <p style="margin:0;color:rgba(255,255,255,0.8);">The Esplanade near the Hatch Shell<br>100 Embankment Rd, Boston, MA 02114<br><br>Please arrive 10 minutes early.</p>
+        <p style="margin:0;color:rgba(255,255,255,0.8);">The Rose Kennedy Rose Garden<br>Atlantic Avenue, North End, Boston<br><br>Please arrive 10 minutes early.</p>
       </div>
 
       <div style="font-size:13px;color:#8B88B8;line-height:1.8;">
         <strong style="color:#fff;">What to bring:</strong> Comfortable clothes, closed-toe shoes, water, and good vibes.<br><br>
-        Need to cancel or modify? Email us at <a href="mailto:hello@bespokebikeboston.com" style="color:#F5C842;">hello@bespokebikeboston.com</a> at least 48 hours before your ride for a full refund.
+        Need to cancel or modify? Email us at <a href="mailto:bespokebiketoursboston@gmail.com" style="color:#F5C842;">bespokebiketoursboston@gmail.com</a> at least 48 hours before your ride for a full refund.
       </div>
     </div>
     <div style="padding:24px 40px;border-top:1px solid rgba(255,255,255,0.06);text-align:center;color:#8B88B8;font-size:12px;">

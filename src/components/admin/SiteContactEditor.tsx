@@ -34,7 +34,7 @@ export function SiteContactEditor({ initial }: Props) {
   }
 
   const rows: { key: keyof typeof fields; label: string; placeholder: string; type?: string }[] = [
-    { key: 'contact_email',            label: 'Email',              placeholder: 'hello@bespokebikeboston.com', type: 'email' },
+    { key: 'contact_email',            label: 'Email',              placeholder: 'bespokebiketoursboston@gmail.com', type: 'email' },
     { key: 'contact_phone',            label: 'Phone',              placeholder: '(617) 555-0190' },
     { key: 'contact_location',         label: 'Location',           placeholder: 'The Esplanade, Hatch Shell' },
     { key: 'contact_hours',            label: 'Hours',              placeholder: 'Daily 9 AM – 7 PM' },
