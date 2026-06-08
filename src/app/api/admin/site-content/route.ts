@@ -30,7 +30,9 @@ export async function PUT(req: NextRequest) {
   )
 
   revalidatePath('/')
+  revalidatePath('/about')
   revalidatePath('/contact')
+  revalidatePath('/tours')
 
   return NextResponse.json({ ok: true })
 }

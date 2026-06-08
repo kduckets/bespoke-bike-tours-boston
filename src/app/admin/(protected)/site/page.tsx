@@ -4,21 +4,25 @@ import { getSiteContent, SITE_CONTENT_DEFAULTS } from '@/lib/site-content'
 import { SiteHeroEditor } from '@/components/admin/SiteHeroEditor'
 import { SiteTestimonialsEditor } from '@/components/admin/SiteTestimonialsEditor'
 import { SiteContactEditor } from '@/components/admin/SiteContactEditor'
+import { SiteFooterEditor } from '@/components/admin/SiteFooterEditor'
 import { FaqEditor } from '@/components/admin/FaqEditor'
 
 const HERO_KEYS = ['hero_tagline', 'hero_line1', 'hero_line2', 'hero_line3', 'hero_subheadline', 'hero_image_url']
 const CONTACT_KEYS = ['contact_email', 'contact_phone', 'contact_location', 'contact_hours', 'contact_instagram_handle', 'contact_instagram_url']
+const FOOTER_KEYS = ['footer_tagline', 'footer_tiktok_url']
 
 export default async function SitePage() {
-  const [heroContent, contactContent, testimonials, faqs] = await Promise.all([
+  const [heroContent, contactContent, footerContent, testimonials, faqs] = await Promise.all([
     getSiteContent(HERO_KEYS),
     getSiteContent(CONTACT_KEYS),
+    getSiteContent(FOOTER_KEYS),
     prisma.testimonial.findMany({ orderBy: { sortOrder: 'asc' } }).catch(() => []),
     (async () => { try { return await prisma.faq.findMany({ orderBy: { sortOrder: 'asc' } }) } catch { return [] } })(),
   ])
 
   const heroWithDefaults = { ...SITE_CONTENT_DEFAULTS, ...heroContent }
   const contactWithDefaults = { ...SITE_CONTENT_DEFAULTS, ...contactContent }
+  const footerWithDefaults = { ...SITE_CONTENT_DEFAULTS, ...footerContent }
 
   return (
     <div className="p-8 max-w-4xl space-y-8">
@@ -32,6 +36,7 @@ export default async function SitePage() {
       <SiteTestimonialsEditor initial={testimonials} />
       <FaqEditor initial={faqs} />
       <SiteContactEditor initial={contactWithDefaults} />
+      <SiteFooterEditor initial={footerWithDefaults} />
     </div>
   )
 }

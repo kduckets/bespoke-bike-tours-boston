@@ -1,8 +1,20 @@
 // src/components/layout/Footer.tsx
 import Link from 'next/link'
 import Image from 'next/image'
+import { getSiteContent } from '@/lib/site-content'
 
-export function Footer() {
+const FOOTER_KEYS = [
+  'contact_email',
+  'contact_phone',
+  'contact_instagram_handle',
+  'contact_instagram_url',
+  'footer_tagline',
+  'footer_tiktok_url',
+]
+
+export async function Footer() {
+  const c = await getSiteContent(FOOTER_KEYS)
+
   return (
     <footer className="bg-[#08091E] border-t border-gold/15 pt-16 pb-10 px-10 mt-0">
       <div className="max-w-6xl mx-auto">
@@ -17,8 +29,7 @@ export function Footer() {
               className="rounded-full mb-4"
             />
             <p className="text-sm text-muted leading-relaxed max-w-xs">
-              A little bit of Vegas on two wheels. We&rsquo;re not your history class — we&rsquo;re the best
-              afternoon (or night) you&rsquo;ll have in this city.
+              {c.footer_tagline}
             </p>
           </div>
 
@@ -35,18 +46,25 @@ export function Footer() {
           {/* Contact */}
           <div>
             <div className="section-label">Contact</div>
-            <a href="mailto:bespokebiketoursboston@gmail.com" className="block text-sm text-muted mb-2.5 hover:text-white transition-colors">
-              bespokebiketoursboston@gmail.com
+            <a href={`mailto:${c.contact_email}`} className="block text-sm text-muted mb-2.5 hover:text-white transition-colors">
+              {c.contact_email}
             </a>
-            <a href="tel:6175550190" className="block text-sm text-muted mb-2.5 hover:text-white transition-colors">
-              (617) 555-0190
+            <a href={`tel:${c.contact_phone.replace(/\D/g, '')}`} className="block text-sm text-muted mb-2.5 hover:text-white transition-colors">
+              {c.contact_phone}
             </a>
             <div className="flex gap-4 mt-4">
-              {['Instagram', 'TikTok'].map((s) => (
-                <a key={s} href="#" className="text-xs tracking-widest uppercase text-muted hover:text-gold transition-colors">
-                  {s}
+              {c.contact_instagram_url && (
+                <a href={c.contact_instagram_url} target="_blank" rel="noopener noreferrer"
+                   className="text-xs tracking-widest uppercase text-muted hover:text-gold transition-colors">
+                  Instagram
                 </a>
-              ))}
+              )}
+              {c.footer_tiktok_url && (
+                <a href={c.footer_tiktok_url} target="_blank" rel="noopener noreferrer"
+                   className="text-xs tracking-widest uppercase text-muted hover:text-gold transition-colors">
+                  TikTok
+                </a>
+              )}
             </div>
           </div>
         </div>

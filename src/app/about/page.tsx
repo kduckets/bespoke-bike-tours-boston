@@ -5,6 +5,8 @@ import { buildMetadata } from '@/lib/metadata'
 import { prisma } from '@/lib/prisma'
 import { getSiteContent } from '@/lib/site-content'
 
+export const revalidate = 60
+
 export const metadata: Metadata = buildMetadata({
   title: 'About Us',
   description: 'Meet the Boston local behind the best bike tour in the city. No khaki shirts, no monotone history lectures. Just great routes and unforgettable experiences.',
