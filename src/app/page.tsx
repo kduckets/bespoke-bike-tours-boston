@@ -1,6 +1,15 @@
 // src/app/page.tsx
+import type { Metadata } from 'next'
 import Link from 'next/link'
 import { Footer } from '@/components/layout/Footer'
+import { buildMetadata } from '@/lib/metadata'
+
+export const metadata: Metadata = buildMetadata({
+  title: 'Guided Bike Tours in Boston',
+  description:
+    'Book the best guided bike tour in Boston. Ride the Esplanade, explore Back Bay and Beacon Hill, and see iconic sights with a local expert. Groups welcome. Daily rides.',
+  path: '/',
+})
 import { HeroParticles } from '@/components/ui/HeroParticles'
 import { InlineBookingWidgetClient as InlineBookingWidget } from '@/components/booking/InlineBookingWidgetClient'
 import { getSiteContent } from '@/lib/site-content'
