@@ -1,5 +1,6 @@
 'use client'
 import { useState } from 'react'
+import { RichTextEditor } from './RichTextEditor'
 
 interface Props {
   initial: Record<string, string>
@@ -42,12 +43,10 @@ export function SiteFooterEditor({ initial }: Props) {
       <div className="space-y-5">
         <label className="block">
           <span className="text-[11px] tracking-widests uppercase text-muted block mb-1.5">Brand Tagline</span>
-          <textarea
-            className="admin-input w-full resize-none"
-            rows={3}
+          <RichTextEditor
             value={fields.footer_tagline}
-            onChange={e => set('footer_tagline', e.target.value)}
-            placeholder="A little bit of Vegas on two wheels…"
+            onChange={html => set('footer_tagline', html)}
+            minHeight={72}
           />
         </label>
 

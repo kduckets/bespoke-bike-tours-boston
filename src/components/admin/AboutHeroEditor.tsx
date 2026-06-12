@@ -1,6 +1,7 @@
 'use client'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { RichTextEditor } from './RichTextEditor'
 
 interface Props {
   initial: { about_quote: string; about_body: string }
@@ -34,19 +35,19 @@ export function AboutHeroEditor({ initial }: Props) {
 
       <label className="block">
         <span className="text-[11px] tracking-[3px] uppercase text-muted block mb-1">Pull Quote</span>
-        <textarea
-          className="admin-input w-full h-20 resize-none"
+        <RichTextEditor
           value={fields.about_quote}
-          onChange={e => setFields(f => ({ ...f, about_quote: e.target.value }))}
+          onChange={html => setFields(f => ({ ...f, about_quote: html }))}
+          minHeight={80}
         />
       </label>
 
       <label className="block">
         <span className="text-[11px] tracking-[3px] uppercase text-muted block mb-1">Body Copy</span>
-        <textarea
-          className="admin-input w-full h-32 resize-none"
+        <RichTextEditor
           value={fields.about_body}
-          onChange={e => setFields(f => ({ ...f, about_body: e.target.value }))}
+          onChange={html => setFields(f => ({ ...f, about_body: html }))}
+          minHeight={128}
         />
       </label>
 

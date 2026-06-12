@@ -217,6 +217,24 @@ textarea.field { resize: vertical; }
 .rdp-day.available:hover { background: rgba(123,111,212,0.25); border-color: #7B6FD4; }
 .rdp-day.few-spots { color: #F5C842; border-color: rgba(245,200,66,0.3); }
 
+/* ─── Rich text rendered output (public pages) ───────────────────────────── */
+.rich-text p          { margin-bottom: 0.6em; }
+.rich-text p:last-child { margin-bottom: 0; }
+.rich-text strong     { font-weight: 700; }
+.rich-text em         { font-style: italic; }
+.rich-text u          { text-decoration: underline; }
+.rich-text ul         { list-style: disc inside; margin: 0.4em 0 0.4em 1em; }
+.rich-text ol         { list-style: decimal inside; margin: 0.4em 0 0.4em 1em; }
+.rich-text li         { margin-bottom: 0.25em; }
+
+/* Tiptap editor area inside admin */
+.tiptap p             { margin-bottom: 0.4em; }
+.tiptap p:last-child  { margin-bottom: 0; }
+.tiptap ul            { list-style: disc inside; margin: 0.4em 0 0.4em 1em; }
+.tiptap ol            { list-style: decimal inside; margin: 0.4em 0 0.4em 1em; }
+.tiptap li            { margin-bottom: 0.2em; }
+.tiptap:focus         { outline: none; }
+
 /* ─── Capacity bar ────────────────────────────────────────────────────────── */
 .capacity-bar-track {
   @apply h-2 rounded-full bg-white/10 overflow-hidden;

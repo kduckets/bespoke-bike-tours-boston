@@ -1,6 +1,7 @@
 'use client'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { RichTextEditor } from './RichTextEditor'
 
 interface Testimonial {
   id: string
@@ -100,12 +101,7 @@ export function SiteTestimonialsEditor({ initial }: Props) {
       {adding && (
         <div className="border border-gold/20 rounded p-5 bg-gold/5 space-y-4">
           <div className="text-[11px] tracking-widest uppercase text-gold mb-2">New Testimonial</div>
-          <textarea
-            className="admin-input w-full h-24 resize-none"
-            placeholder="Quote…"
-            value={newFields.quote}
-            onChange={e => setNewFields(f => ({ ...f, quote: e.target.value }))}
-          />
+          <RichTextEditor value={newFields.quote} onChange={html => setNewFields(f => ({ ...f, quote: html }))} minHeight={96} />
           <div className="grid grid-cols-2 gap-4">
             <input className="admin-input" placeholder="Author (first name + last initial)" value={newFields.author} onChange={e => setNewFields(f => ({ ...f, author: e.target.value }))} />
             <input className="admin-input" placeholder="Location (e.g. New York, NY)" value={newFields.location} onChange={e => setNewFields(f => ({ ...f, location: e.target.value }))} />
@@ -137,11 +133,7 @@ export function SiteTestimonialsEditor({ initial }: Props) {
           <div key={t.id} className={`border rounded p-5 space-y-3 transition-opacity ${t.isActive ? 'border-white/10' : 'border-white/5 opacity-50'}`}>
             {editingId === t.id ? (
               <>
-                <textarea
-                  className="admin-input w-full h-24 resize-none"
-                  value={editFields.quote ?? t.quote}
-                  onChange={e => setEdit('quote', e.target.value)}
-                />
+                <RichTextEditor value={editFields.quote ?? t.quote} onChange={html => setEdit('quote', html)} minHeight={96} />
                 <div className="grid grid-cols-2 gap-4">
                   <input className="admin-input" value={editFields.author ?? t.author} onChange={e => setEdit('author', e.target.value)} />
                   <input className="admin-input" value={editFields.location ?? t.location} onChange={e => setEdit('location', e.target.value)} />

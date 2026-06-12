@@ -1,6 +1,7 @@
 'use client'
 import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
+import { RichTextEditor } from './RichTextEditor'
 
 interface TeamMember {
   id: string
@@ -166,7 +167,7 @@ export function AboutTeamEditor({ initial }: Props) {
           </div>
           <input className="admin-input w-full" placeholder="Full Name" value={newFields.name} onChange={e => setNewFields(f => ({ ...f, name: e.target.value }))} />
           <input className="admin-input w-full" placeholder="Role / Title" value={newFields.role} onChange={e => setNewFields(f => ({ ...f, role: e.target.value }))} />
-          <textarea className="admin-input w-full h-24 resize-none" placeholder="Bio…" value={newFields.bio} onChange={e => setNewFields(f => ({ ...f, bio: e.target.value }))} />
+          <RichTextEditor value={newFields.bio} onChange={html => setNewFields(f => ({ ...f, bio: html }))} minHeight={96} />
           <div className="flex gap-3">
             <button onClick={handleAdd} disabled={saving} className="btn-primary text-sm">
               {saving ? 'Saving…' : 'Add Guide'}
@@ -204,7 +205,7 @@ export function AboutTeamEditor({ initial }: Props) {
                 </div>
                 <input className="admin-input w-full" value={editFields.name ?? m.name} onChange={e => setEdit('name', e.target.value)} />
                 <input className="admin-input w-full" value={editFields.role ?? m.role} onChange={e => setEdit('role', e.target.value)} />
-                <textarea className="admin-input w-full h-24 resize-none" value={editFields.bio ?? m.bio} onChange={e => setEdit('bio', e.target.value)} />
+                <RichTextEditor value={editFields.bio ?? m.bio} onChange={html => setEdit('bio', html)} minHeight={96} />
                 <div className="flex gap-3">
                   <button onClick={() => handleSaveEdit(m.id)} disabled={saving} className="btn-primary text-sm">
                     {saving ? 'Saving…' : 'Save'}

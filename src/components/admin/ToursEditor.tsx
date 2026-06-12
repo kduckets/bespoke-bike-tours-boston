@@ -1,6 +1,7 @@
 'use client'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { RichTextEditor } from './RichTextEditor'
 
 interface Tour {
   id: string
@@ -172,7 +173,7 @@ export function ToursEditor({ initial }: Props) {
           </div>
           <label className="block">
             <span className="text-[11px] tracking-widests uppercase text-muted block mb-1">Description</span>
-            <textarea className="admin-input w-full h-20 resize-none" placeholder="A brief tour description…" value={newFields.description} onChange={e => setNewFields(f => ({ ...f, description: e.target.value }))} />
+            <RichTextEditor value={newFields.description} onChange={html => setNewFields(f => ({ ...f, description: html }))} minHeight={80} />
           </label>
           <div className="grid grid-cols-3 gap-4">
             <label className="block">
@@ -221,7 +222,7 @@ export function ToursEditor({ initial }: Props) {
                 </div>
                 <label className="block">
                   <span className="text-[11px] tracking-widests uppercase text-muted block mb-1">Description</span>
-                  <textarea className="admin-input w-full h-20 resize-none" value={editFields.description ?? tour.description} onChange={e => setEdit('description', e.target.value)} />
+                  <RichTextEditor value={editFields.description ?? tour.description} onChange={html => setEdit('description', html)} minHeight={80} />
                 </label>
                 <div className="grid grid-cols-3 gap-4">
                   <label className="block">

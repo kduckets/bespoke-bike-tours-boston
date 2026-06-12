@@ -1,6 +1,7 @@
 'use client'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { RichTextEditor } from './RichTextEditor'
 
 interface AboutValue {
   id: string
@@ -99,7 +100,7 @@ export function AboutValuesEditor({ initial }: Props) {
         <div className="border border-gold/20 rounded p-5 bg-gold/5 space-y-4">
           <div className="text-[11px] tracking-widest uppercase text-gold mb-2">New Value</div>
           <input className="admin-input w-full" placeholder="Title (e.g. Fun First)" value={newFields.title} onChange={e => setNewFields(f => ({ ...f, title: e.target.value }))} />
-          <textarea className="admin-input w-full h-24 resize-none" placeholder="Description…" value={newFields.desc} onChange={e => setNewFields(f => ({ ...f, desc: e.target.value }))} />
+          <RichTextEditor value={newFields.desc} onChange={html => setNewFields(f => ({ ...f, desc: html }))} minHeight={96} />
           <label className="block">
             <span className="text-[11px] tracking-widests uppercase text-muted block mb-1">Sort Order</span>
             <input type="number" className="admin-input w-32" value={newFields.sortOrder} onChange={e => setNewFields(f => ({ ...f, sortOrder: Number(e.target.value) }))} />
@@ -122,7 +123,7 @@ export function AboutValuesEditor({ initial }: Props) {
             {editingId === v.id ? (
               <>
                 <input className="admin-input w-full" value={editFields.title ?? v.title} onChange={e => setEdit('title', e.target.value)} />
-                <textarea className="admin-input w-full h-24 resize-none" value={editFields.desc ?? v.desc} onChange={e => setEdit('desc', e.target.value)} />
+                <RichTextEditor value={editFields.desc ?? v.desc} onChange={html => setEdit('desc', html)} minHeight={96} />
                 <label className="block">
                   <span className="text-[11px] tracking-widests uppercase text-muted block mb-1">Sort Order</span>
                   <input type="number" className="admin-input w-32" value={editFields.sortOrder ?? v.sortOrder} onChange={e => setEdit('sortOrder', Number(e.target.value))} />

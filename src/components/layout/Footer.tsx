@@ -28,9 +28,8 @@ export async function Footer() {
               height={80}
               className="rounded-full mb-4"
             />
-            <p className="text-sm text-muted leading-relaxed max-w-xs">
-              {c.footer_tagline}
-            </p>
+            <div className="text-sm text-muted leading-relaxed max-w-xs rich-text"
+              dangerouslySetInnerHTML={{ __html: c.footer_tagline }} />
           </div>
 
           {/* Company */}

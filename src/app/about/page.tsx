@@ -36,12 +36,10 @@ export default async function AboutPage() {
           <div className="section-label">Our Story</div>
           <h1 className="font-display text-7xl tracking-widests mb-8">ABOUT US</h1>
           <blockquote className="font-serif italic text-4xl leading-snug text-white
-                                  max-w-2xl mx-auto mb-8">
-            &ldquo;{heroContent.about_quote.replace(/^["""]|["""]$/g, '')}&rdquo;
-          </blockquote>
-          <p className="text-muted text-base leading-relaxed max-w-xl mx-auto">
-            {heroContent.about_body}
-          </p>
+                                  max-w-2xl mx-auto mb-8 rich-text"
+            dangerouslySetInnerHTML={{ __html: heroContent.about_quote }} />
+          <div className="text-muted text-base leading-relaxed max-w-xl mx-auto rich-text"
+            dangerouslySetInnerHTML={{ __html: heroContent.about_body }} />
         </div>
 
         <div className="max-w-5xl mx-auto px-10 py-20">
@@ -74,7 +72,7 @@ export default async function AboutPage() {
                 <div className="flex-1">
                   <div className="font-bold text-2xl mb-1">{guide.name}</div>
                   <div className="text-[11px] tracking-[3px] uppercase text-gold mb-6">{guide.role}</div>
-                  <p className="text-muted leading-relaxed text-base">{guide.bio}</p>
+                  <div className="text-muted leading-relaxed text-base rich-text" dangerouslySetInnerHTML={{ __html: guide.bio }} />
                 </div>
               </div>
             </div>
@@ -93,7 +91,7 @@ export default async function AboutPage() {
                       {String(i + 1).padStart(2, '0')}
                     </div>
                     <div className="text-lg font-bold mb-2">{v.title}</div>
-                    <p className="text-sm text-muted leading-relaxed">{v.desc}</p>
+                    <div className="text-sm text-muted leading-relaxed rich-text" dangerouslySetInnerHTML={{ __html: v.desc }} />
                   </div>
                 ))}
               </div>

@@ -73,7 +73,7 @@ export default async function HomePage() {
             <div className="flex-1">
               <div className="section-label">The Experience</div>
               <h2 className="font-display text-4xl tracking-wide mb-4">{tour.name.toUpperCase()}</h2>
-              <p className="text-muted leading-relaxed mb-6">{tour.description}</p>
+              <div className="text-muted leading-relaxed mb-6 rich-text" dangerouslySetInnerHTML={{ __html: tour.description }} />
               <div className="flex flex-wrap gap-6 text-sm">
                 <div className="flex items-center gap-2">
                   <span className="text-gold">⏱</span>
@@ -118,7 +118,7 @@ export default async function HomePage() {
               {testimonials.map((t: { id: string; quote: string; author: string; location: string; rating: number }) => (
                 <div key={t.id} className="card p-8 text-left">
                   <div className="text-gold text-sm mb-4">{'★'.repeat(t.rating)}</div>
-                  <p className="text-sm text-white/80 leading-relaxed italic mb-5">&ldquo;{t.quote}&rdquo;</p>
+                  <div className="text-sm text-white/80 leading-relaxed italic mb-5 rich-text" dangerouslySetInnerHTML={{ __html: t.quote }} />
                   <div className="text-[11px] font-semibold tracking-widest uppercase text-iris-2">
                     {t.author} — {t.location}
                   </div>
@@ -138,7 +138,7 @@ export default async function HomePage() {
             {faqs.map((faq: { id: string; question: string; answer: string }, i: number) => (
               <div key={faq.id} className={`border-t border-white/[0.08] py-6 ${i === faqs.length - 1 ? 'border-b' : ''}`}>
                 <div className="font-semibold text-base mb-2">{faq.question}</div>
-                <p className="text-sm text-muted leading-relaxed">{faq.answer}</p>
+                <div className="text-sm text-muted leading-relaxed rich-text" dangerouslySetInnerHTML={{ __html: faq.answer }} />
               </div>
             ))}
           </div>

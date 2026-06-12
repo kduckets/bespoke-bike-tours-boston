@@ -1,6 +1,7 @@
 'use client'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { RichTextEditor } from './RichTextEditor'
 
 interface Faq {
   id: string
@@ -99,7 +100,7 @@ export function FaqEditor({ initial }: Props) {
         <div className="border border-gold/20 rounded p-5 bg-gold/5 space-y-4">
           <div className="text-[11px] tracking-widest uppercase text-gold mb-2">New FAQ</div>
           <input className="admin-input w-full" placeholder="Question…" value={newFields.question} onChange={e => setNewFields(f => ({ ...f, question: e.target.value }))} />
-          <textarea className="admin-input w-full h-28 resize-none" placeholder="Answer…" value={newFields.answer} onChange={e => setNewFields(f => ({ ...f, answer: e.target.value }))} />
+          <RichTextEditor value={newFields.answer} onChange={html => setNewFields(f => ({ ...f, answer: html }))} minHeight={112} />
           <label className="block">
             <span className="text-[11px] tracking-widests uppercase text-muted block mb-1">Sort Order</span>
             <input type="number" className="admin-input w-32" value={newFields.sortOrder} onChange={e => setNewFields(f => ({ ...f, sortOrder: Number(e.target.value) }))} />
@@ -122,7 +123,7 @@ export function FaqEditor({ initial }: Props) {
             {editingId === faq.id ? (
               <>
                 <input className="admin-input w-full" value={editFields.question ?? faq.question} onChange={e => setEdit('question', e.target.value)} />
-                <textarea className="admin-input w-full h-28 resize-none" value={editFields.answer ?? faq.answer} onChange={e => setEdit('answer', e.target.value)} />
+                <RichTextEditor value={editFields.answer ?? faq.answer} onChange={html => setEdit('answer', html)} minHeight={112} />
                 <label className="block">
                   <span className="text-[11px] tracking-widests uppercase text-muted block mb-1">Sort Order</span>
                   <input type="number" className="admin-input w-32" value={editFields.sortOrder ?? faq.sortOrder} onChange={e => setEdit('sortOrder', Number(e.target.value))} />
