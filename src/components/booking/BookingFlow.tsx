@@ -149,18 +149,29 @@ function GuestForm({ index, guest, onChange }: {
 }
 
 function Step2GuestInfo({ guests, guestDetails, primaryPhone, specialRequests, loading,
+  promoCode, promoValidation, onPromoCodeChange, onApplyPromo,
   onChangeGuest, onChangePhone, onChangeRequests, onBack, onNext }: {
   guests: number; guestDetails: GuestDetail[]; primaryPhone: string; specialRequests: string
   loading: boolean
+  promoCode: string; promoValidation: PromoValidation | null
+  onPromoCodeChange: (c: string) => void; onApplyPromo: () => Promise<void>
   onChangeGuest: (i: number, g: GuestDetail) => void
   onChangePhone: (v: string) => void
   onChangeRequests: (v: string) => void
   onBack: () => void; onNext: () => void
 }) {
+  const [promoLoading, setPromoLoading] = useState(false)
+
   const allValid = guestDetails.every(g =>
     g.firstName.trim() && g.lastName.trim() &&
     /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(g.email)
   ) && primaryPhone.trim().length >= 7
+
+  async function handleApplyPromo() {
+    setPromoLoading(true)
+    await onApplyPromo()
+    setPromoLoading(false)
+  }
 
   return (
     <div className="card p-5 sm:p-10">
@@ -189,6 +200,32 @@ function Step2GuestInfo({ guests, guestDetails, primaryPhone, specialRequests, l
             placeholder="Celebrating a birthday? Accessibility needs? Let us know…"
             value={specialRequests} onChange={e => onChangeRequests(e.target.value)} />
         </div>
+        <div>
+          <label className="block text-[11px] tracking-[2px] uppercase text-muted mb-2">
+            Promo / Gift Code <span className="normal-case text-muted/60">(optional)</span>
+          </label>
+          <div className="flex gap-2">
+            <input
+              className="field flex-1"
+              placeholder="Enter code"
+              value={promoCode}
+              onChange={e => onPromoCodeChange(e.target.value.toUpperCase())}
+              onKeyDown={e => e.key === 'Enter' && handleApplyPromo()}
+            />
+            <button onClick={handleApplyPromo} disabled={promoLoading || !promoCode}
+              className="btn-ghost whitespace-nowrap disabled:opacity-40">
+              {promoLoading ? '…' : 'Apply'}
+            </button>
+          </div>
+          {promoValidation && !promoValidation.valid && (
+            <p className="text-red-400 text-xs mt-2">{promoValidation.error}</p>
+          )}
+          {promoValidation?.valid && (
+            <p className="text-green-400 text-xs mt-2">
+              ✓ {promoCode} applied — discount will be reflected in your total
+            </p>
+          )}
+        </div>
       </div>
 
       <div className="flex gap-3 mt-6">
@@ -210,17 +247,15 @@ function Step2GuestInfo({ guests, guestDetails, primaryPhone, specialRequests, l
 // ─── Step 3 — Payment ─────────────────────────────────────────────────────────
 
 function PaymentForm({ totalCents, subtotalCents, guests, tourName, bookingReference,
-  promoValidation, promoCode, onPromoCodeChange, onApplyPromo, onBack, onSuccess }: {
+  promoValidation, promoCode, onBack, onSuccess }: {
   totalCents: number; subtotalCents: number; guests: number; tourName: string
   bookingReference: string; promoValidation: PromoValidation | null
-  promoCode: string; onPromoCodeChange: (c: string) => void
-  onApplyPromo: () => Promise<void>; onBack: () => void; onSuccess: () => void
+  promoCode: string; onBack: () => void; onSuccess: () => void
 }) {
   const stripe   = useStripe()
   const elements = useElements()
-  const [loading, setLoading]           = useState(false)
-  const [promoLoading, setPromoLoading] = useState(false)
-  const [error, setError]               = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError]     = useState<string | null>(null)
 
   async function handleSubmit() {
     if (!stripe || !elements) return
@@ -243,12 +278,6 @@ function PaymentForm({ totalCents, subtotalCents, guests, tourName, bookingRefer
 
     if (paymentIntent?.status === 'succeeded') onSuccess()
     else setLoading(false)
-  }
-
-  async function handleApplyPromo() {
-    setPromoLoading(true)
-    await onApplyPromo()
-    setPromoLoading(false)
   }
 
   const discountCents = promoValidation?.discountCents ?? 0
@@ -276,24 +305,8 @@ function PaymentForm({ totalCents, subtotalCents, guests, tourName, bookingRefer
           </div>
         </div>
 
-        <div className="flex gap-2 mt-5">
-          <input
-            className="field flex-1 py-2.5 text-sm"
-            placeholder="Promo or gift code"
-            value={promoCode}
-            onChange={(e) => onPromoCodeChange(e.target.value.toUpperCase())}
-            onKeyDown={(e) => e.key === 'Enter' && handleApplyPromo()}
-          />
-          <button onClick={handleApplyPromo} disabled={promoLoading || !promoCode}
-            className="btn-ghost whitespace-nowrap disabled:opacity-40">
-            {promoLoading ? '…' : 'Apply'}
-          </button>
-        </div>
-        {promoValidation && !promoValidation.valid && (
-          <p className="text-red-400 text-xs mt-2">{promoValidation.error}</p>
-        )}
         {promoValidation?.valid && (
-          <p className="text-green-400 text-xs mt-2">
+          <p className="text-green-400 text-xs mt-3">
             ✓ {promoCode} applied —{' '}
             {promoValidation.type === 'PERCENTAGE' ? `${promoValidation.value}% off` : `${formatPrice(discountCents)} off`}
           </p>
@@ -475,6 +488,9 @@ export function BookingFlow({ tours: rawTours }: { tours: TourData[] }) {
           guests={guests} guestDetails={guestDetails}
           primaryPhone={primaryPhone} specialRequests={specialRequests}
           loading={creatingBooking}
+          promoCode={promoCode} promoValidation={promoValidation}
+          onPromoCodeChange={(c) => { setPromoCode(c); setPromoValidation(null) }}
+          onApplyPromo={handleApplyPromo}
           onChangeGuest={handleChangeGuest}
           onChangePhone={setPrimaryPhone}
           onChangeRequests={setSpecialRequests}
@@ -497,8 +513,6 @@ export function BookingFlow({ tours: rawTours }: { tours: TourData[] }) {
             totalCents={totalCents} subtotalCents={subtotalCents}
             guests={guests} tourName={tour.name} bookingReference={bookingRef}
             promoValidation={promoValidation} promoCode={promoCode}
-            onPromoCodeChange={(c) => { setPromoCode(c); setPromoValidation(null) }}
-            onApplyPromo={handleApplyPromo}
             onBack={() => setStep(2)}
             onSuccess={() => setConfirmed(true)} />
         </Elements>
