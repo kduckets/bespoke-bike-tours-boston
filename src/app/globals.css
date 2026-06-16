@@ -227,13 +227,20 @@ textarea.field { resize: vertical; }
 .rich-text ol         { list-style: decimal inside; margin: 0.4em 0 0.4em 1em; }
 .rich-text li         { margin-bottom: 0.25em; }
 
-/* Tiptap editor area inside admin */
-.tiptap p             { margin-bottom: 0.4em; }
-.tiptap p:last-child  { margin-bottom: 0; }
-.tiptap ul            { list-style: disc inside; margin: 0.4em 0 0.4em 1em; }
-.tiptap ol            { list-style: decimal inside; margin: 0.4em 0 0.4em 1em; }
-.tiptap li            { margin-bottom: 0.2em; }
-.tiptap:focus         { outline: none; }
+/* Tiptap editor area inside admin — ProseMirror is the actual contenteditable element */
+.ProseMirror p            { margin-bottom: 0.5em; }
+.ProseMirror p:last-child { margin-bottom: 0; }
+.ProseMirror ul           { list-style: disc inside; margin: 0.4em 0 0.4em 1em; }
+.ProseMirror ol           { list-style: decimal inside; margin: 0.4em 0 0.4em 1em; }
+.ProseMirror li           { margin-bottom: 0.2em; }
+.ProseMirror:focus        { outline: none; }
+.ProseMirror p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  color: var(--text-muted);
+  pointer-events: none;
+  float: left;
+  height: 0;
+}
 
 /* ─── Capacity bar ────────────────────────────────────────────────────────── */
 .capacity-bar-track {

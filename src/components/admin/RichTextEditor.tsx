@@ -4,6 +4,7 @@ import StarterKit from '@tiptap/starter-kit'
 import Underline from '@tiptap/extension-underline'
 import { TextStyle } from '@tiptap/extension-text-style'
 import { Color } from '@tiptap/extension-color'
+import TextAlign from '@tiptap/extension-text-align'
 
 // Font-size stored as an inline style on TextStyle marks
 const FontSize = Extension.create({
@@ -14,7 +15,7 @@ const FontSize = Extension.create({
       attributes: {
         fontSize: {
           default: null,
-          parseHTML: (el: HTMLElement) => (el as HTMLElement).style.fontSize || null,
+          parseHTML: (el: HTMLElement) => el.style.fontSize || null,
           renderHTML: (attrs: Record<string, string | null>) =>
             attrs.fontSize ? { style: `font-size: ${attrs.fontSize}` } : {},
         },
@@ -35,6 +36,35 @@ const COLORS = [
   { hex: '#60a5fa', label: 'Blue' },
 ]
 
+// Simple SVG alignment icons
+function AlignLeftIcon() {
+  return (
+    <svg width="13" height="11" viewBox="0 0 13 11" fill="currentColor">
+      <rect x="0" y="0" width="13" height="2" rx="1"/>
+      <rect x="0" y="4.5" width="9" height="2" rx="1"/>
+      <rect x="0" y="9" width="11" height="2" rx="1"/>
+    </svg>
+  )
+}
+function AlignCenterIcon() {
+  return (
+    <svg width="13" height="11" viewBox="0 0 13 11" fill="currentColor">
+      <rect x="0" y="0" width="13" height="2" rx="1"/>
+      <rect x="2" y="4.5" width="9" height="2" rx="1"/>
+      <rect x="1" y="9" width="11" height="2" rx="1"/>
+    </svg>
+  )
+}
+function AlignRightIcon() {
+  return (
+    <svg width="13" height="11" viewBox="0 0 13 11" fill="currentColor">
+      <rect x="0" y="0" width="13" height="2" rx="1"/>
+      <rect x="4" y="4.5" width="9" height="2" rx="1"/>
+      <rect x="2" y="9" width="11" height="2" rx="1"/>
+    </svg>
+  )
+}
+
 interface Props {
   value: string
   onChange: (html: string) => void
@@ -49,6 +79,7 @@ export function RichTextEditor({ value, onChange, minHeight = 96 }: Props) {
       TextStyle,
       Color,
       FontSize,
+      TextAlign.configure({ types: ['paragraph', 'listItem'] }),
     ],
     content: value || '',
     onUpdate({ editor }) {
@@ -56,6 +87,7 @@ export function RichTextEditor({ value, onChange, minHeight = 96 }: Props) {
     },
     editorProps: {
       attributes: {
+        // ProseMirror is always the contenteditable element; no extra class needed
         class: 'outline-none text-sm text-white leading-relaxed',
         style: `min-height: ${minHeight}px`,
       },
@@ -87,6 +119,7 @@ export function RichTextEditor({ value, onChange, minHeight = 96 }: Props) {
     <div className="rounded border border-white/10 bg-white/5 focus-within:border-[var(--iris)] transition-colors overflow-hidden">
       {/* ── Toolbar ── */}
       <div className="flex items-center gap-0.5 px-2 py-1.5 border-b border-white/10 flex-wrap bg-white/[0.02]">
+        {/* Format */}
         <Btn active={editor.isActive('bold')} onClick={() => editor.chain().focus().toggleBold().run()} title="Bold (Ctrl+B)">
           <strong>B</strong>
         </Btn>
@@ -99,6 +132,32 @@ export function RichTextEditor({ value, onChange, minHeight = 96 }: Props) {
 
         <Sep />
 
+        {/* Alignment */}
+        <Btn
+          active={editor.isActive({ textAlign: 'left' })}
+          onClick={() => editor.chain().focus().setTextAlign('left').run()}
+          title="Align left"
+        >
+          <AlignLeftIcon />
+        </Btn>
+        <Btn
+          active={editor.isActive({ textAlign: 'center' })}
+          onClick={() => editor.chain().focus().setTextAlign('center').run()}
+          title="Align center"
+        >
+          <AlignCenterIcon />
+        </Btn>
+        <Btn
+          active={editor.isActive({ textAlign: 'right' })}
+          onClick={() => editor.chain().focus().setTextAlign('right').run()}
+          title="Align right"
+        >
+          <AlignRightIcon />
+        </Btn>
+
+        <Sep />
+
+        {/* Lists */}
         <Btn active={editor.isActive('bulletList')} onClick={() => editor.chain().focus().toggleBulletList().run()} title="Bullet list">
           • List
         </Btn>
