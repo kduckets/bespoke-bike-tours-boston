@@ -276,19 +276,22 @@ export function RichTextEditor({ value, onChange, minHeight = 96 }: Props) {
   if (!editor) return null
 
   return (
-    <div
-      className="rounded border border-white/10 bg-white/5 focus-within:border-[var(--iris)] transition-colors overflow-hidden"
-      onMouseDown={() => {
-        // Re-focus the editor on every mousedown on the wrapper. Without this,
-        // clicking back in after blur leaves the cursor visible but keyboard
-        // focus on something else — mouse events work, typing does not.
-        if (!editor.isFocused) {
-          editor.commands.focus()
-        }
-      }}
-    >
+    <div className="rounded border border-white/10 bg-white/5 focus-within:border-[var(--iris)] transition-colors overflow-hidden">
       <Toolbar editor={editor} />
-      <div className="px-3 py-2.5">
+      <div
+        className="px-3 py-2.5"
+        onMouseDown={(e) => {
+          // Only act when the click landed on this padding div itself, not on
+          // the contenteditable inside it. If e.target === e.currentTarget the
+          // user clicked below/around the text (padding area). Calling
+          // preventDefault stops the browser from blurring the editor when
+          // clicking a non-focusable element; then we explicitly focus.
+          if (e.target === e.currentTarget) {
+            e.preventDefault()
+            editor.commands.focus()
+          }
+        }}
+      >
         <EditorContent editor={editor} />
       </div>
     </div>
