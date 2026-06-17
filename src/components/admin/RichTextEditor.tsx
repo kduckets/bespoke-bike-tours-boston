@@ -5,8 +5,10 @@ import Underline from '@tiptap/extension-underline'
 import { TextStyle } from '@tiptap/extension-text-style'
 import { Color } from '@tiptap/extension-color'
 import TextAlign from '@tiptap/extension-text-align'
+import type { Editor } from '@tiptap/core'
 
-// Font-size stored as an inline style on TextStyle marks
+// ── Extensions ────────────────────────────────────────────────────────────────
+
 const FontSize = Extension.create({
   name: 'fontSize',
   addGlobalAttributes() {
@@ -24,6 +26,19 @@ const FontSize = Extension.create({
   },
 })
 
+const EXTENSIONS = [
+  StarterKit.configure({ heading: false }),
+  Underline,
+  TextStyle,
+  Color,
+  FontSize,
+  TextAlign.configure({ types: ['paragraph', 'listItem'] }),
+]
+
+// ── Toolbar atoms (defined at module level — NOT inside the component) ────────
+// Defining components inside another component creates a new type every render,
+// causing React to unmount/remount them mid-interaction and lose events.
+
 const SIZES = ['11px', '13px', '15px', '18px', '22px', '28px', '36px']
 
 const COLORS = [
@@ -36,7 +51,32 @@ const COLORS = [
   { hex: '#60a5fa', label: 'Blue' },
 ]
 
-// Simple SVG alignment icons
+function ToolbarBtn({
+  active, onMouseDown, title, children,
+}: {
+  active?: boolean
+  onMouseDown: (e: React.MouseEvent) => void
+  title: string
+  children: React.ReactNode
+}) {
+  return (
+    <button
+      type="button"
+      title={title}
+      onMouseDown={onMouseDown}
+      className={`px-2 py-1 rounded text-xs font-mono transition-colors select-none ${
+        active ? 'bg-gold/20 text-gold' : 'text-muted hover:text-white hover:bg-white/10'
+      }`}
+    >
+      {children}
+    </button>
+  )
+}
+
+function Sep() {
+  return <div className="w-px h-4 bg-white/15 mx-0.5 self-center" />
+}
+
 function AlignLeftIcon() {
   return (
     <svg width="13" height="11" viewBox="0 0 13 11" fill="currentColor">
@@ -65,6 +105,128 @@ function AlignRightIcon() {
   )
 }
 
+// ── Content helper ─────────────────────────────────────────────────────────────
+// Existing content saved as plain text (before rich-text was added) arrives
+// without any HTML tags. Tiptap parses that as a single text run, collapsing
+// all newlines into spaces and producing one uneditable blob. Detect plain text
+// and convert paragraph breaks to <p> elements before handing to Tiptap.
+
+function prepareContent(raw: string): string {
+  if (!raw) return ''
+  if (/<[a-z][\s\S]*>/i.test(raw)) return raw          // already HTML — pass through
+  return raw
+    .split(/\n{2,}/)                                    // split on blank lines
+    .map(p => p.trim().replace(/\n/g, '<br>'))          // single newlines → <br>
+    .filter(Boolean)
+    .map(p => `<p>${p}</p>`)
+    .join('')
+}
+
+// ── Toolbar ────────────────────────────────────────────────────────────────────
+
+function Toolbar({ editor }: { editor: Editor }) {
+  const cmd = (fn: () => void) => (e: React.MouseEvent) => { e.preventDefault(); fn() }
+
+  return (
+    <div className="flex items-center gap-0.5 px-2 py-1.5 border-b border-white/10 flex-wrap bg-white/[0.02]">
+      {/* Inline format */}
+      <ToolbarBtn active={editor.isActive('bold')}
+        onMouseDown={cmd(() => editor.chain().focus().toggleBold().run())} title="Bold (Ctrl+B)">
+        <strong>B</strong>
+      </ToolbarBtn>
+      <ToolbarBtn active={editor.isActive('italic')}
+        onMouseDown={cmd(() => editor.chain().focus().toggleItalic().run())} title="Italic (Ctrl+I)">
+        <em>I</em>
+      </ToolbarBtn>
+      <ToolbarBtn active={editor.isActive('underline')}
+        onMouseDown={cmd(() => editor.chain().focus().toggleUnderline().run())} title="Underline (Ctrl+U)">
+        <span style={{ textDecoration: 'underline' }}>U</span>
+      </ToolbarBtn>
+
+      <Sep />
+
+      {/* Alignment */}
+      <ToolbarBtn active={editor.isActive({ textAlign: 'left' })}
+        onMouseDown={cmd(() => editor.chain().focus().setTextAlign('left').run())} title="Align left">
+        <AlignLeftIcon />
+      </ToolbarBtn>
+      <ToolbarBtn active={editor.isActive({ textAlign: 'center' })}
+        onMouseDown={cmd(() => editor.chain().focus().setTextAlign('center').run())} title="Align center">
+        <AlignCenterIcon />
+      </ToolbarBtn>
+      <ToolbarBtn active={editor.isActive({ textAlign: 'right' })}
+        onMouseDown={cmd(() => editor.chain().focus().setTextAlign('right').run())} title="Align right">
+        <AlignRightIcon />
+      </ToolbarBtn>
+
+      <Sep />
+
+      {/* Lists */}
+      <ToolbarBtn active={editor.isActive('bulletList')}
+        onMouseDown={cmd(() => editor.chain().focus().toggleBulletList().run())} title="Bullet list">
+        • List
+      </ToolbarBtn>
+      <ToolbarBtn active={editor.isActive('orderedList')}
+        onMouseDown={cmd(() => editor.chain().focus().toggleOrderedList().run())} title="Numbered list">
+        1. List
+      </ToolbarBtn>
+
+      <Sep />
+
+      {/* Font size — uses onMouseDown so the editor doesn't lose focus */}
+      <select
+        title="Font size"
+        defaultValue=""
+        onMouseDown={e => e.stopPropagation()}
+        onChange={e => {
+          const val = e.target.value
+          editor.chain().focus().setMark('textStyle', { fontSize: val || null }).run()
+          e.target.value = ''
+        }}
+        className="text-[11px] bg-transparent text-muted border border-white/10 rounded px-1 py-0.5 cursor-pointer hover:border-white/30 focus:outline-none"
+      >
+        <option value="">Size</option>
+        {SIZES.map(s => <option key={s} value={s}>{s}</option>)}
+      </select>
+
+      <Sep />
+
+      {/* Color swatches */}
+      <div className="flex items-center gap-1">
+        {COLORS.map(({ hex, label }) => (
+          <button
+            key={hex}
+            type="button"
+            title={label}
+            onMouseDown={cmd(() => editor.chain().focus().setColor(hex).run())}
+            className="w-3.5 h-3.5 rounded-full border border-white/20 hover:scale-125 transition-transform"
+            style={{ backgroundColor: hex }}
+          />
+        ))}
+        <label title="Custom color" className="cursor-pointer relative">
+          <input
+            type="color"
+            className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
+            onChange={e => editor.chain().focus().setColor(e.target.value).run()}
+          />
+          <span className="w-3.5 h-3.5 rounded-full border border-white/30 block"
+                style={{ background: 'conic-gradient(red,yellow,lime,cyan,blue,magenta,red)' }} />
+        </label>
+      </div>
+
+      <Sep />
+
+      <ToolbarBtn
+        onMouseDown={cmd(() => editor.chain().focus().clearNodes().unsetAllMarks().run())}
+        title="Clear formatting">
+        ✕ Clear
+      </ToolbarBtn>
+    </div>
+  )
+}
+
+// ── Main component ─────────────────────────────────────────────────────────────
+
 interface Props {
   value: string
   onChange: (html: string) => void
@@ -73,22 +235,15 @@ interface Props {
 
 export function RichTextEditor({ value, onChange, minHeight = 96 }: Props) {
   const editor = useEditor({
-    immediatelyRender: false, // required in Next.js: prevents SSR render without event handlers
-    extensions: [
-      StarterKit.configure({ heading: false }),
-      Underline,
-      TextStyle,
-      Color,
-      FontSize,
-      TextAlign.configure({ types: ['paragraph', 'listItem'] }),
-    ],
-    content: value || '',
+    immediatelyRender: false,       // skip SSR render — event handlers must attach on client
+    shouldRerenderOnTransaction: true, // re-render on every transaction so toolbar states stay current
+    extensions: EXTENSIONS,
+    content: prepareContent(value),
     onUpdate({ editor }) {
       onChange(editor.getHTML())
     },
     editorProps: {
       attributes: {
-        // ProseMirror is always the contenteditable element; no extra class needed
         class: 'outline-none text-sm text-white leading-relaxed',
         style: `min-height: ${minHeight}px`,
       },
@@ -97,132 +252,9 @@ export function RichTextEditor({ value, onChange, minHeight = 96 }: Props) {
 
   if (!editor) return null
 
-  function Btn({
-    active, onClick, title, children,
-  }: { active?: boolean; onClick: () => void; title: string; children: React.ReactNode }) {
-    return (
-      <button
-        type="button"
-        title={title}
-        onMouseDown={e => { e.preventDefault(); onClick() }}
-        className={`px-2 py-1 rounded text-xs font-mono transition-colors select-none ${
-          active ? 'bg-gold/20 text-gold' : 'text-muted hover:text-white hover:bg-white/10'
-        }`}
-      >
-        {children}
-      </button>
-    )
-  }
-
-  const Sep = () => <div className="w-px h-4 bg-white/15 mx-0.5 self-center" />
-
   return (
     <div className="rounded border border-white/10 bg-white/5 focus-within:border-[var(--iris)] transition-colors overflow-hidden">
-      {/* ── Toolbar ── */}
-      <div className="flex items-center gap-0.5 px-2 py-1.5 border-b border-white/10 flex-wrap bg-white/[0.02]">
-        {/* Format */}
-        <Btn active={editor.isActive('bold')} onClick={() => editor.chain().focus().toggleBold().run()} title="Bold (Ctrl+B)">
-          <strong>B</strong>
-        </Btn>
-        <Btn active={editor.isActive('italic')} onClick={() => editor.chain().focus().toggleItalic().run()} title="Italic (Ctrl+I)">
-          <em>I</em>
-        </Btn>
-        <Btn active={editor.isActive('underline')} onClick={() => editor.chain().focus().toggleUnderline().run()} title="Underline (Ctrl+U)">
-          <span style={{ textDecoration: 'underline' }}>U</span>
-        </Btn>
-
-        <Sep />
-
-        {/* Alignment */}
-        <Btn
-          active={editor.isActive({ textAlign: 'left' })}
-          onClick={() => editor.chain().focus().setTextAlign('left').run()}
-          title="Align left"
-        >
-          <AlignLeftIcon />
-        </Btn>
-        <Btn
-          active={editor.isActive({ textAlign: 'center' })}
-          onClick={() => editor.chain().focus().setTextAlign('center').run()}
-          title="Align center"
-        >
-          <AlignCenterIcon />
-        </Btn>
-        <Btn
-          active={editor.isActive({ textAlign: 'right' })}
-          onClick={() => editor.chain().focus().setTextAlign('right').run()}
-          title="Align right"
-        >
-          <AlignRightIcon />
-        </Btn>
-
-        <Sep />
-
-        {/* Lists */}
-        <Btn active={editor.isActive('bulletList')} onClick={() => editor.chain().focus().toggleBulletList().run()} title="Bullet list">
-          • List
-        </Btn>
-        <Btn active={editor.isActive('orderedList')} onClick={() => editor.chain().focus().toggleOrderedList().run()} title="Numbered list">
-          1. List
-        </Btn>
-
-        <Sep />
-
-        {/* Font size */}
-        <select
-          title="Font size"
-          defaultValue=""
-          onMouseDown={e => e.stopPropagation()}
-          onChange={e => {
-            const val = e.target.value
-            if (val) {
-              editor.chain().focus().setMark('textStyle', { fontSize: val }).run()
-            } else {
-              editor.chain().focus().setMark('textStyle', { fontSize: null }).run()
-            }
-            e.target.value = ''
-          }}
-          className="text-[11px] bg-transparent text-muted border border-white/10 rounded px-1 py-0.5 cursor-pointer hover:border-white/30 focus:outline-none"
-        >
-          <option value="">Size</option>
-          {SIZES.map(s => <option key={s} value={s}>{s}</option>)}
-        </select>
-
-        <Sep />
-
-        {/* Color swatches */}
-        <div className="flex items-center gap-1">
-          {COLORS.map(({ hex, label }) => (
-            <button
-              key={hex}
-              type="button"
-              title={label}
-              onMouseDown={e => { e.preventDefault(); editor.chain().focus().setColor(hex).run() }}
-              className="w-3.5 h-3.5 rounded-full border border-white/20 hover:scale-125 transition-transform"
-              style={{ backgroundColor: hex }}
-            />
-          ))}
-          {/* Custom color */}
-          <label title="Custom color" className="cursor-pointer relative">
-            <input
-              type="color"
-              className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
-              onChange={e => editor.chain().focus().setColor(e.target.value).run()}
-            />
-            <span className="w-3.5 h-3.5 rounded-full border border-white/30 block"
-                  style={{ background: 'conic-gradient(red, yellow, lime, cyan, blue, magenta, red)' }} />
-          </label>
-        </div>
-
-        <Sep />
-
-        {/* Clear formatting */}
-        <Btn onClick={() => editor.chain().focus().clearNodes().unsetAllMarks().run()} title="Clear formatting">
-          ✕ Clear
-        </Btn>
-      </div>
-
-      {/* ── Editor area ── */}
+      <Toolbar editor={editor} />
       <div className="px-3 py-2.5">
         <EditorContent editor={editor} />
       </div>
