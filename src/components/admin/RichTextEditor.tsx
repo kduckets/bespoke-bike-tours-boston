@@ -1,6 +1,6 @@
 'use client'
-import { useState } from 'react'
-import { useEditor, EditorContent, Extension, useEditorState } from '@tiptap/react'
+import { useState, useEffect } from 'react'
+import { useEditor, EditorContent, Extension } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import Underline from '@tiptap/extension-underline'
 import { TextStyle } from '@tiptap/extension-text-style'
@@ -124,24 +124,38 @@ function prepareContent(raw: string): string {
 }
 
 // ── Toolbar ────────────────────────────────────────────────────────────────────
-// useEditorState subscribes only the Toolbar to transaction updates.
-// This keeps the parent RichTextEditor free of per-transaction re-renders,
-// which were causing React to fight ProseMirror for DOM/focus control.
+// Deliberately NOT using useEditorState (which uses useSyncExternalStore and
+// forces synchronous React re-renders mid-transaction). Synchronous re-renders
+// during ProseMirror's mousedown handling race with focus management and cause
+// the cursor to appear then immediately disappear.
+//
+// Instead we subscribe via editor.on() inside useEffect. setState calls from
+// ProseMirror event listeners are treated by React 18 as deferred updates —
+// they batch and flush AFTER the current browser event finishes, so the
+// re-render never interferes with focus.
 
 function Toolbar({ editor }: { editor: Editor }) {
-  const state = useEditorState({
-    editor,
-    selector: ({ editor: e }) => ({
-      bold:         e.isActive('bold'),
-      italic:       e.isActive('italic'),
-      underline:    e.isActive('underline'),
-      bulletList:   e.isActive('bulletList'),
-      orderedList:  e.isActive('orderedList'),
-      alignLeft:    e.isActive({ textAlign: 'left' }),
-      alignCenter:  e.isActive({ textAlign: 'center' }),
-      alignRight:   e.isActive({ textAlign: 'right' }),
-    }),
+  const [state, setState] = useState({
+    bold: false, italic: false, underline: false,
+    bulletList: false, orderedList: false,
+    alignLeft: false, alignCenter: false, alignRight: false,
   })
+
+  useEffect(() => {
+    const sync = () => setState({
+      bold:        editor.isActive('bold'),
+      italic:      editor.isActive('italic'),
+      underline:   editor.isActive('underline'),
+      bulletList:  editor.isActive('bulletList'),
+      orderedList: editor.isActive('orderedList'),
+      alignLeft:   editor.isActive({ textAlign: 'left' }),
+      alignCenter: editor.isActive({ textAlign: 'center' }),
+      alignRight:  editor.isActive({ textAlign: 'right' }),
+    })
+    editor.on('selectionUpdate', sync)
+    editor.on('update', sync)
+    return () => { editor.off('selectionUpdate', sync); editor.off('update', sync) }
+  }, [editor])
 
   const cmd = (fn: () => void) => (e: React.MouseEvent) => { e.preventDefault(); fn() }
 
