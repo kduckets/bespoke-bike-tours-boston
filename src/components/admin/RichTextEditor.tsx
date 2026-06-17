@@ -73,6 +73,7 @@ interface Props {
 
 export function RichTextEditor({ value, onChange, minHeight = 96 }: Props) {
   const editor = useEditor({
+    immediatelyRender: false, // required in Next.js: prevents SSR render without event handlers
     extensions: [
       StarterKit.configure({ heading: false }),
       Underline,
