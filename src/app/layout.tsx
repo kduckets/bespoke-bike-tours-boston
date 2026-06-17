@@ -56,6 +56,9 @@ export const metadata: Metadata = {
   creator: 'Bespoke Bike Tours Boston',
   publisher: 'Bespoke Bike Tours Boston',
   category: 'travel',
+  verification: {
+    google: 'kDrgUwuyHsazOBCGDbDiFf2dKh1oea81JgBebZBnvss',
+  },
   icons: {
     icon: [
       { url: '/logo.jpg', type: 'image/jpeg' },
