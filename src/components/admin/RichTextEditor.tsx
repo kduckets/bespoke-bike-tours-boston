@@ -1,43 +1,154 @@
 'use client'
-import { useEditor, EditorContent, Extension } from '@tiptap/react'
-import StarterKit from '@tiptap/starter-kit'
-import Underline from '@tiptap/extension-underline'
-import { TextStyle } from '@tiptap/extension-text-style'
-import { Color } from '@tiptap/extension-color'
-import TextAlign from '@tiptap/extension-text-align'
-import type { Editor } from '@tiptap/core'
 
-// ── Extensions ────────────────────────────────────────────────────────────────
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { LexicalComposer } from '@lexical/react/LexicalComposer'
+import { RichTextPlugin } from '@lexical/react/LexicalRichTextPlugin'
+import { ContentEditable } from '@lexical/react/LexicalContentEditable'
+import { HistoryPlugin } from '@lexical/react/LexicalHistoryPlugin'
+import { OnChangePlugin } from '@lexical/react/LexicalOnChangePlugin'
+import { ListPlugin } from '@lexical/react/LexicalListPlugin'
+import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
+import { LexicalErrorBoundary } from '@lexical/react/LexicalErrorBoundary'
+import { HeadingNode, QuoteNode } from '@lexical/rich-text'
+import { ListNode, ListItemNode } from '@lexical/list'
+import {
+  $getRoot,
+  $getSelection,
+  $isRangeSelection,
+  FORMAT_TEXT_COMMAND,
+  FORMAT_ELEMENT_COMMAND,
+  INDENT_CONTENT_COMMAND,
+  OUTDENT_CONTENT_COMMAND,
+  EditorState,
+  LexicalEditor,
+  $createParagraphNode,
+  $createTextNode,
+} from 'lexical'
+import {
+  INSERT_UNORDERED_LIST_COMMAND,
+  INSERT_ORDERED_LIST_COMMAND,
+  REMOVE_LIST_COMMAND,
+  $isListNode,
+} from '@lexical/list'
+import { $generateHtmlFromNodes, $generateNodesFromDOM } from '@lexical/html'
+import { $getNearestNodeOfType } from '@lexical/utils'
+import { $isHeadingNode } from '@lexical/rich-text'
 
-const FontSize = Extension.create({
-  name: 'fontSize',
-  addGlobalAttributes() {
-    return [{
-      types: ['textStyle'],
-      attributes: {
-        fontSize: {
-          default: null,
-          parseHTML: (el: HTMLElement) => el.style.fontSize || null,
-          renderHTML: (attrs: Record<string, string | null>) =>
-            attrs.fontSize ? { style: `font-size: ${attrs.fontSize}` } : {},
-        },
-      },
-    }]
-  },
-})
+// ── Types ─────────────────────────────────────────────────────────────────────
 
-const EXTENSIONS = [
-  StarterKit.configure({ heading: false }),
-  Underline,
-  TextStyle,
-  Color,
-  FontSize,
-  TextAlign.configure({ types: ['paragraph', 'listItem'] }),
-]
+interface Props {
+  value: string
+  onChange: (html: string) => void
+  minHeight?: number
+}
 
-// ── Toolbar atoms (defined at module level — NOT inside the component) ────────
-// Defining components inside another component creates a new type every render,
-// causing React to unmount/remount them mid-interaction and lose events.
+// ── Content helpers ────────────────────────────────────────────────────────────
+
+function isHtml(str: string) {
+  return /<[a-z][\s\S]*>/i.test(str)
+}
+
+function plainTextToHtml(text: string): string {
+  return text
+    .split(/\n{2,}/)
+    .map(p => p.trim().replace(/\n/g, '<br>'))
+    .filter(Boolean)
+    .map(p => `<p>${p}</p>`)
+    .join('')
+}
+
+// ── Toolbar state hook ─────────────────────────────────────────────────────────
+
+function useToolbarState(editor: LexicalEditor) {
+  const [state, setState] = useState({
+    isBold: false,
+    isItalic: false,
+    isUnderline: false,
+    isStrikethrough: false,
+    isBulletList: false,
+    isOrderedList: false,
+    align: 'left' as string,
+    fontSize: '' as string,
+    fontColor: '' as string,
+  })
+
+  const update = useCallback(() => {
+    editor.getEditorState().read(() => {
+      const selection = $getSelection()
+      if (!$isRangeSelection(selection)) return
+
+      const anchorNode = selection.anchor.getNode()
+      const element =
+        anchorNode.getKey() === 'root'
+          ? anchorNode
+          : anchorNode.getTopLevelElementOrThrow()
+
+      const elementKey = element.getKey()
+      const elementDOM = editor.getElementByKey(elementKey)
+
+      setState({
+        isBold: selection.hasFormat('bold'),
+        isItalic: selection.hasFormat('italic'),
+        isUnderline: selection.hasFormat('underline'),
+        isStrikethrough: selection.hasFormat('strikethrough'),
+        isBulletList: $isListNode(element) && (element as ListNode).getListType() === 'bullet',
+        isOrderedList: $isListNode(element) && (element as ListNode).getListType() === 'number',
+        align: (elementDOM?.style.textAlign) || 'left',
+        fontSize: '',
+        fontColor: '',
+      })
+    })
+  }, [editor])
+
+  useEffect(() => {
+    return editor.registerUpdateListener(({ editorState }) => {
+      editorState.read(update)
+    })
+  }, [editor, update])
+
+  return state
+}
+
+// ── Font size / color via inline styles ────────────────────────────────────────
+// Lexical doesn't have built-in font-size/color commands, so we use
+// the selection API to apply inline CSS on the selected text nodes.
+
+function applyInlineStyle(editor: LexicalEditor, property: string, value: string | null) {
+  editor.update(() => {
+    const selection = $getSelection()
+    if (!$isRangeSelection(selection)) return
+    const nodes = selection.getNodes()
+    for (const node of nodes) {
+      if ('setStyle' in node && typeof (node as any).setStyle === 'function') {
+        const current = (node as any).getStyle() as string
+        const styles = parseStyles(current)
+        if (value === null) {
+          delete styles[property]
+        } else {
+          styles[property] = value
+        }
+        ;(node as any).setStyle(serializeStyles(styles))
+      }
+    }
+  })
+}
+
+function parseStyles(styleStr: string): Record<string, string> {
+  const result: Record<string, string> = {}
+  for (const part of styleStr.split(';')) {
+    const [k, v] = part.split(':').map(s => s.trim())
+    if (k && v) result[k] = v
+  }
+  return result
+}
+
+function serializeStyles(styles: Record<string, string>): string {
+  return Object.entries(styles)
+    .map(([k, v]) => `${k}: ${v}`)
+    .join('; ')
+}
+
+// ── Constants ──────────────────────────────────────────────────────────────────
 
 const SIZES = ['11px', '13px', '15px', '18px', '22px', '28px', '36px']
 
@@ -51,31 +162,7 @@ const COLORS = [
   { hex: '#60a5fa', label: 'Blue' },
 ]
 
-function ToolbarBtn({
-  active, onMouseDown, title, children,
-}: {
-  active?: boolean
-  onMouseDown: (e: React.MouseEvent) => void
-  title: string
-  children: React.ReactNode
-}) {
-  return (
-    <button
-      type="button"
-      title={title}
-      onMouseDown={onMouseDown}
-      className={`px-2 py-1 rounded text-xs font-mono transition-colors select-none ${
-        active ? 'bg-gold/20 text-gold' : 'text-muted hover:text-white hover:bg-white/10'
-      }`}
-    >
-      {children}
-    </button>
-  )
-}
-
-function Sep() {
-  return <div className="w-px h-4 bg-white/15 mx-0.5 self-center" />
-}
+// ── SVG icons ──────────────────────────────────────────────────────────────────
 
 function AlignLeftIcon() {
   return (
@@ -105,82 +192,113 @@ function AlignRightIcon() {
   )
 }
 
-// ── Content helper ─────────────────────────────────────────────────────────────
-// Existing content saved as plain text (before rich-text was added) arrives
-// without any HTML tags. Tiptap parses that as a single text run, collapsing
-// all newlines into spaces and producing one uneditable blob. Detect plain text
-// and convert paragraph breaks to <p> elements before handing to Tiptap.
+// ── Toolbar button ─────────────────────────────────────────────────────────────
 
-function prepareContent(raw: string): string {
-  if (!raw) return ''
-  if (/<[a-z][\s\S]*>/i.test(raw)) return raw          // already HTML — pass through
-  return raw
-    .split(/\n{2,}/)                                    // split on blank lines
-    .map(p => p.trim().replace(/\n/g, '<br>'))          // single newlines → <br>
-    .filter(Boolean)
-    .map(p => `<p>${p}</p>`)
-    .join('')
+function Btn({
+  active, onMouseDown, title, children,
+}: {
+  active?: boolean
+  onMouseDown: (e: React.MouseEvent) => void
+  title: string
+  children: React.ReactNode
+}) {
+  return (
+    <button
+      type="button"
+      title={title}
+      onMouseDown={onMouseDown}
+      className={`px-2 py-1 rounded text-xs font-mono transition-colors select-none ${
+        active ? 'bg-gold/20 text-gold' : 'text-muted hover:text-white hover:bg-white/10'
+      }`}
+    >
+      {children}
+    </button>
+  )
 }
 
-// ── Toolbar ────────────────────────────────────────────────────────────────────
+function Sep() {
+  return <div className="w-px h-4 bg-white/15 mx-0.5 self-center" />
+}
 
-function Toolbar({ editor }: { editor: Editor }) {
-  const cmd = (fn: () => void) => (e: React.MouseEvent) => { e.preventDefault(); fn() }
+// ── Toolbar (uses composer context internally) ─────────────────────────────────
+
+function Toolbar() {
+  const [editor] = useLexicalComposerContext()
+  const ts = useToolbarState(editor)
+
+  const cmd = (e: React.MouseEvent, fn: () => void) => {
+    e.preventDefault()
+    fn()
+  }
 
   return (
     <div className="flex items-center gap-0.5 px-2 py-1.5 border-b border-white/10 flex-wrap bg-white/[0.02]">
-      {/* Inline format */}
-      <ToolbarBtn active={editor.isActive('bold')}
-        onMouseDown={cmd(() => editor.chain().focus().toggleBold().run())} title="Bold (Ctrl+B)">
+      {/* Inline */}
+      <Btn active={ts.isBold}
+        onMouseDown={e => cmd(e, () => editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'bold'))}
+        title="Bold (Ctrl+B)">
         <strong>B</strong>
-      </ToolbarBtn>
-      <ToolbarBtn active={editor.isActive('italic')}
-        onMouseDown={cmd(() => editor.chain().focus().toggleItalic().run())} title="Italic (Ctrl+I)">
+      </Btn>
+      <Btn active={ts.isItalic}
+        onMouseDown={e => cmd(e, () => editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'italic'))}
+        title="Italic (Ctrl+I)">
         <em>I</em>
-      </ToolbarBtn>
-      <ToolbarBtn active={editor.isActive('underline')}
-        onMouseDown={cmd(() => editor.chain().focus().toggleUnderline().run())} title="Underline (Ctrl+U)">
+      </Btn>
+      <Btn active={ts.isUnderline}
+        onMouseDown={e => cmd(e, () => editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'underline'))}
+        title="Underline (Ctrl+U)">
         <span style={{ textDecoration: 'underline' }}>U</span>
-      </ToolbarBtn>
+      </Btn>
 
       <Sep />
 
       {/* Alignment */}
-      <ToolbarBtn active={editor.isActive({ textAlign: 'left' })}
-        onMouseDown={cmd(() => editor.chain().focus().setTextAlign('left').run())} title="Align left">
+      <Btn active={ts.align === 'left' || ts.align === ''}
+        onMouseDown={e => cmd(e, () => editor.dispatchCommand(FORMAT_ELEMENT_COMMAND, 'left'))}
+        title="Align left">
         <AlignLeftIcon />
-      </ToolbarBtn>
-      <ToolbarBtn active={editor.isActive({ textAlign: 'center' })}
-        onMouseDown={cmd(() => editor.chain().focus().setTextAlign('center').run())} title="Align center">
+      </Btn>
+      <Btn active={ts.align === 'center'}
+        onMouseDown={e => cmd(e, () => editor.dispatchCommand(FORMAT_ELEMENT_COMMAND, 'center'))}
+        title="Align center">
         <AlignCenterIcon />
-      </ToolbarBtn>
-      <ToolbarBtn active={editor.isActive({ textAlign: 'right' })}
-        onMouseDown={cmd(() => editor.chain().focus().setTextAlign('right').run())} title="Align right">
+      </Btn>
+      <Btn active={ts.align === 'right'}
+        onMouseDown={e => cmd(e, () => editor.dispatchCommand(FORMAT_ELEMENT_COMMAND, 'right'))}
+        title="Align right">
         <AlignRightIcon />
-      </ToolbarBtn>
+      </Btn>
 
       <Sep />
 
       {/* Lists */}
-      <ToolbarBtn active={editor.isActive('bulletList')}
-        onMouseDown={cmd(() => editor.chain().focus().toggleBulletList().run())} title="Bullet list">
+      <Btn active={ts.isBulletList}
+        onMouseDown={e => cmd(e, () => {
+          if (ts.isBulletList) editor.dispatchCommand(REMOVE_LIST_COMMAND, undefined)
+          else editor.dispatchCommand(INSERT_UNORDERED_LIST_COMMAND, undefined)
+        })}
+        title="Bullet list">
         • List
-      </ToolbarBtn>
-      <ToolbarBtn active={editor.isActive('orderedList')}
-        onMouseDown={cmd(() => editor.chain().focus().toggleOrderedList().run())} title="Numbered list">
+      </Btn>
+      <Btn active={ts.isOrderedList}
+        onMouseDown={e => cmd(e, () => {
+          if (ts.isOrderedList) editor.dispatchCommand(REMOVE_LIST_COMMAND, undefined)
+          else editor.dispatchCommand(INSERT_ORDERED_LIST_COMMAND, undefined)
+        })}
+        title="Numbered list">
         1. List
-      </ToolbarBtn>
+      </Btn>
 
       <Sep />
 
-      {/* Font size — uses onMouseDown so the editor doesn't lose focus */}
+      {/* Font size */}
       <select
         title="Font size"
         defaultValue=""
         onMouseDown={e => e.stopPropagation()}
         onChange={e => {
-          const val = e.target.value
-          editor.chain().focus().setMark('textStyle', { fontSize: val || null }).run()
+          const val = e.target.value || null
+          applyInlineStyle(editor, 'font-size', val)
           e.target.value = ''
         }}
         className="text-[11px] bg-transparent text-muted border border-white/10 rounded px-1 py-0.5 cursor-pointer hover:border-white/30 focus:outline-none"
@@ -198,7 +316,10 @@ function Toolbar({ editor }: { editor: Editor }) {
             key={hex}
             type="button"
             title={label}
-            onMouseDown={cmd(() => editor.chain().focus().setColor(hex).run())}
+            onMouseDown={e => {
+              e.preventDefault()
+              applyInlineStyle(editor, 'color', hex)
+            }}
             className="w-3.5 h-3.5 rounded-full border border-white/20 hover:scale-125 transition-transform"
             style={{ backgroundColor: hex }}
           />
@@ -207,57 +328,133 @@ function Toolbar({ editor }: { editor: Editor }) {
           <input
             type="color"
             className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
-            onChange={e => editor.chain().focus().setColor(e.target.value).run()}
+            onChange={e => applyInlineStyle(editor, 'color', e.target.value)}
           />
           <span className="w-3.5 h-3.5 rounded-full border border-white/30 block"
-                style={{ background: 'conic-gradient(red,yellow,lime,cyan,blue,magenta,red)' }} />
+            style={{ background: 'conic-gradient(red,yellow,lime,cyan,blue,magenta,red)' }} />
         </label>
       </div>
 
       <Sep />
 
-      <ToolbarBtn
-        onMouseDown={cmd(() => editor.chain().focus().clearNodes().unsetAllMarks().run())}
+      {/* Clear formatting */}
+      <Btn
+        onMouseDown={e => cmd(e, () => {
+          editor.update(() => {
+            const selection = $getSelection()
+            if ($isRangeSelection(selection)) {
+              selection.getNodes().forEach(node => {
+                if ('setStyle' in node && typeof (node as any).setStyle === 'function') {
+                  ;(node as any).setStyle('')
+                }
+                if ('setFormat' in node && typeof (node as any).setFormat === 'function') {
+                  ;(node as any).setFormat(0)
+                }
+              })
+            }
+          })
+        })}
         title="Clear formatting">
         ✕ Clear
-      </ToolbarBtn>
+      </Btn>
     </div>
   )
 }
 
-// ── Main component ─────────────────────────────────────────────────────────────
+// ── HTML initializer plugin ────────────────────────────────────────────────────
+// Loads the initial HTML (or plain text) into the Lexical editor once on mount.
 
-interface Props {
-  value: string
-  onChange: (html: string) => void
-  minHeight?: number
+function InitialContentPlugin({ initialHtml }: { initialHtml: string }) {
+  const [editor] = useLexicalComposerContext()
+  const initialized = useRef(false)
+
+  useEffect(() => {
+    if (initialized.current || !initialHtml) return
+    initialized.current = true
+
+    editor.update(() => {
+      const parser = new DOMParser()
+      const dom = parser.parseFromString(initialHtml, 'text/html')
+      const nodes = $generateNodesFromDOM(editor, dom)
+      const root = $getRoot()
+      root.clear()
+      root.append(...nodes)
+    })
+  }, [editor, initialHtml])
+
+  return null
 }
 
-export function RichTextEditor({ value, onChange, minHeight = 96 }: Props) {
-  const editor = useEditor({
-    immediatelyRender: false,       // skip SSR render — event handlers must attach on client
-    shouldRerenderOnTransaction: true, // re-render on every transaction so toolbar states stay current
-    extensions: EXTENSIONS,
-    content: prepareContent(value),
-    onUpdate({ editor }) {
-      onChange(editor.getHTML())
-    },
-    editorProps: {
-      attributes: {
-        class: 'outline-none text-sm text-white leading-relaxed',
-        style: `min-height: ${minHeight}px`,
-      },
-    },
-  })
+// ── OnChange → HTML plugin ─────────────────────────────────────────────────────
 
-  if (!editor) return null
+function HtmlOutputPlugin({ onChange }: { onChange: (html: string) => void }) {
+  const [editor] = useLexicalComposerContext()
+
+  const handleChange = useCallback((editorState: EditorState) => {
+    editorState.read(() => {
+      const html = $generateHtmlFromNodes(editor, null)
+      onChange(html)
+    })
+  }, [editor, onChange])
+
+  return <OnChangePlugin onChange={handleChange} ignoreSelectionChange />
+}
+
+// ── Editor theme ───────────────────────────────────────────────────────────────
+
+const THEME = {
+  paragraph: 'mb-2 last:mb-0',
+  text: {
+    bold: 'font-bold',
+    italic: 'italic',
+    underline: 'underline',
+    strikethrough: 'line-through',
+  },
+  list: {
+    ul: 'list-disc ml-4 mb-2',
+    ol: 'list-decimal ml-4 mb-2',
+    listitem: 'mb-1',
+  },
+}
+
+// ── Main export ────────────────────────────────────────────────────────────────
+
+export function RichTextEditor({ value, onChange, minHeight = 96 }: Props) {
+  const initialHtml = isHtml(value) ? value : plainTextToHtml(value)
+
+  const initialConfig = {
+    namespace: 'RichTextEditor',
+    theme: THEME,
+    nodes: [HeadingNode, QuoteNode, ListNode, ListItemNode],
+    onError: (error: Error) => console.error('[Lexical]', error),
+  }
 
   return (
-    <div className="rounded border border-white/10 bg-white/5 focus-within:border-[var(--iris)] transition-colors overflow-hidden">
-      <Toolbar editor={editor} />
-      <div className="px-3 py-2.5">
-        <EditorContent editor={editor} />
+    <LexicalComposer initialConfig={initialConfig}>
+      <div className="rounded border border-white/10 bg-white/5 focus-within:border-[var(--iris)] transition-colors overflow-hidden">
+        <Toolbar />
+        <div className="px-3 py-2.5 relative">
+          <RichTextPlugin
+            contentEditable={
+              <ContentEditable
+                className="outline-none text-sm text-white leading-relaxed"
+                style={{ minHeight }}
+                aria-label="Rich text editor"
+              />
+            }
+            placeholder={
+              <div className="absolute top-[10px] left-3 text-sm text-muted pointer-events-none select-none">
+                Start typing…
+              </div>
+            }
+            ErrorBoundary={LexicalErrorBoundary}
+          />
+          <ListPlugin />
+          <HistoryPlugin />
+          <InitialContentPlugin initialHtml={initialHtml} />
+          <HtmlOutputPlugin onChange={onChange} />
+        </div>
       </div>
-    </div>
+    </LexicalComposer>
   )
 }

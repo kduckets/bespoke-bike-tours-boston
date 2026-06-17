@@ -12,6 +12,13 @@
     "db:seed": "npx tsx prisma/seed.ts"
   },
   "dependencies": {
+    "@lexical/history": "^0.45.0",
+    "@lexical/html": "^0.45.0",
+    "@lexical/list": "^0.45.0",
+    "@lexical/react": "^0.45.0",
+    "@lexical/rich-text": "^0.45.0",
+    "@lexical/selection": "^0.45.0",
+    "@lexical/utils": "^0.45.0",
     "@prisma/client": "^5.16.0",
     "@stripe/react-stripe-js": "^2.7.3",
     "@stripe/stripe-js": "^4.1.0",
@@ -27,6 +34,7 @@
     "bcryptjs": "^2.4.3",
     "clsx": "^2.1.1",
     "date-fns": "^3.6.0",
+    "lexical": "^0.45.0",
     "next": "^16.2.3",
     "next-auth": "^4.24.7",
     "react": "^18",
