@@ -276,7 +276,17 @@ export function RichTextEditor({ value, onChange, minHeight = 96 }: Props) {
   if (!editor) return null
 
   return (
-    <div className="rounded border border-white/10 bg-white/5 focus-within:border-[var(--iris)] transition-colors overflow-hidden">
+    <div
+      className="rounded border border-white/10 bg-white/5 focus-within:border-[var(--iris)] transition-colors overflow-hidden"
+      onMouseDown={() => {
+        // Re-focus the editor on every mousedown on the wrapper. Without this,
+        // clicking back in after blur leaves the cursor visible but keyboard
+        // focus on something else — mouse events work, typing does not.
+        if (!editor.isFocused) {
+          editor.commands.focus()
+        }
+      }}
+    >
       <Toolbar editor={editor} />
       <div className="px-3 py-2.5">
         <EditorContent editor={editor} />
