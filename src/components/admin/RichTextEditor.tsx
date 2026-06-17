@@ -1,6 +1,6 @@
 'use client'
 import { useState } from 'react'
-import { useEditor, EditorContent, Extension } from '@tiptap/react'
+import { useEditor, EditorContent, Extension, useEditorState } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import Underline from '@tiptap/extension-underline'
 import { TextStyle } from '@tiptap/extension-text-style'
@@ -124,22 +124,39 @@ function prepareContent(raw: string): string {
 }
 
 // ── Toolbar ────────────────────────────────────────────────────────────────────
+// useEditorState subscribes only the Toolbar to transaction updates.
+// This keeps the parent RichTextEditor free of per-transaction re-renders,
+// which were causing React to fight ProseMirror for DOM/focus control.
 
 function Toolbar({ editor }: { editor: Editor }) {
+  const state = useEditorState({
+    editor,
+    selector: ({ editor: e }) => ({
+      bold:         e.isActive('bold'),
+      italic:       e.isActive('italic'),
+      underline:    e.isActive('underline'),
+      bulletList:   e.isActive('bulletList'),
+      orderedList:  e.isActive('orderedList'),
+      alignLeft:    e.isActive({ textAlign: 'left' }),
+      alignCenter:  e.isActive({ textAlign: 'center' }),
+      alignRight:   e.isActive({ textAlign: 'right' }),
+    }),
+  })
+
   const cmd = (fn: () => void) => (e: React.MouseEvent) => { e.preventDefault(); fn() }
 
   return (
     <div className="flex items-center gap-0.5 px-2 py-1.5 border-b border-white/10 flex-wrap bg-white/[0.02]">
       {/* Inline format */}
-      <ToolbarBtn active={editor.isActive('bold')}
+      <ToolbarBtn active={state.bold}
         onMouseDown={cmd(() => editor.chain().focus().toggleBold().run())} title="Bold (Ctrl+B)">
         <strong>B</strong>
       </ToolbarBtn>
-      <ToolbarBtn active={editor.isActive('italic')}
+      <ToolbarBtn active={state.italic}
         onMouseDown={cmd(() => editor.chain().focus().toggleItalic().run())} title="Italic (Ctrl+I)">
         <em>I</em>
       </ToolbarBtn>
-      <ToolbarBtn active={editor.isActive('underline')}
+      <ToolbarBtn active={state.underline}
         onMouseDown={cmd(() => editor.chain().focus().toggleUnderline().run())} title="Underline (Ctrl+U)">
         <span style={{ textDecoration: 'underline' }}>U</span>
       </ToolbarBtn>
@@ -147,15 +164,15 @@ function Toolbar({ editor }: { editor: Editor }) {
       <Sep />
 
       {/* Alignment */}
-      <ToolbarBtn active={editor.isActive({ textAlign: 'left' })}
+      <ToolbarBtn active={state.alignLeft}
         onMouseDown={cmd(() => editor.chain().focus().setTextAlign('left').run())} title="Align left">
         <AlignLeftIcon />
       </ToolbarBtn>
-      <ToolbarBtn active={editor.isActive({ textAlign: 'center' })}
+      <ToolbarBtn active={state.alignCenter}
         onMouseDown={cmd(() => editor.chain().focus().setTextAlign('center').run())} title="Align center">
         <AlignCenterIcon />
       </ToolbarBtn>
-      <ToolbarBtn active={editor.isActive({ textAlign: 'right' })}
+      <ToolbarBtn active={state.alignRight}
         onMouseDown={cmd(() => editor.chain().focus().setTextAlign('right').run())} title="Align right">
         <AlignRightIcon />
       </ToolbarBtn>
@@ -163,18 +180,18 @@ function Toolbar({ editor }: { editor: Editor }) {
       <Sep />
 
       {/* Lists */}
-      <ToolbarBtn active={editor.isActive('bulletList')}
+      <ToolbarBtn active={state.bulletList}
         onMouseDown={cmd(() => editor.chain().focus().toggleBulletList().run())} title="Bullet list">
         • List
       </ToolbarBtn>
-      <ToolbarBtn active={editor.isActive('orderedList')}
+      <ToolbarBtn active={state.orderedList}
         onMouseDown={cmd(() => editor.chain().focus().toggleOrderedList().run())} title="Numbered list">
         1. List
       </ToolbarBtn>
 
       <Sep />
 
-      {/* Font size — uses onMouseDown so the editor doesn't lose focus */}
+      {/* Font size */}
       <select
         title="Font size"
         defaultValue=""
@@ -243,7 +260,6 @@ export function RichTextEditor({ value, onChange, minHeight = 96 }: Props) {
 
   const editor = useEditor({
     immediatelyRender: false,
-    shouldRerenderOnTransaction: true,
     extensions: EXTENSIONS,
     content: initialContent,
     onUpdate({ editor }) {
