@@ -1,4 +1,5 @@
 'use client'
+import { useState } from 'react'
 import { useEditor, EditorContent, Extension } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import Underline from '@tiptap/extension-underline'
@@ -234,11 +235,17 @@ interface Props {
 }
 
 export function RichTextEditor({ value, onChange, minHeight = 96 }: Props) {
+  // Compute initial content once and freeze it. Every render calls prepareContent(value)
+  // and returns a new string object; Tiptap v3 treats any new reference in the content
+  // option as a content change and calls setContent(), which resets the editor and kills
+  // the cursor — making it impossible to click and type in pre-filled fields.
+  const [initialContent] = useState(() => prepareContent(value))
+
   const editor = useEditor({
-    immediatelyRender: false,       // skip SSR render — event handlers must attach on client
-    shouldRerenderOnTransaction: true, // re-render on every transaction so toolbar states stay current
+    immediatelyRender: false,
+    shouldRerenderOnTransaction: true,
     extensions: EXTENSIONS,
-    content: prepareContent(value),
+    content: initialContent,
     onUpdate({ editor }) {
       onChange(editor.getHTML())
     },
